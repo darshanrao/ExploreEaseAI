@@ -32,8 +32,6 @@ class TravelPreferences:
         time_preference,
         activity_intensity,
         interests,
-        weather_preference,
-        notifications,
         custom_preferences=""
     ):
         # Validate inputs
