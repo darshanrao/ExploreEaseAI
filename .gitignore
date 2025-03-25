@@ -15,3 +15,8 @@ __pycache__/
 .vscode/
 *.swp
 .idea/
+
+
+# Ignore credentials and token files
+InfoAgent/credentials.json
+InfoAgent/token.pickle
