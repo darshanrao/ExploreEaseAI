@@ -4,6 +4,8 @@ import time
 import os
 from dotenv import load_dotenv
 load_dotenv()
+
+
 def get_claude_response(prompt, model="claude-3-haiku-20240307", max_tokens=1000, retries=3):
     """
     Send a prompt to Claude API and get the text response.
