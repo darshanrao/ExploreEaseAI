@@ -1,0 +1,27 @@
+You are planning a trip to Tokyo from 2025-03-27 06:00 to 2025-03-27 18:00.
+
+You are given the following information.
+
+You have the following preferences:
+- Travel style: Adventure & Cultural  
+- Food preference: Vegetarian  
+- Budget: $2000  
+- Transport mode: Public Transport & Walking  
+- Time preference: Mornings & Evenings  
+- Activity intensity: Moderate  
+- Interests: Historical sites, Anime, Street Food, Nature Walks  
+- Custom preferences: Prefer local experiences over touristy spots, interested in unique cultural events  
+
+User Prompt:  
+"I want to experience the traditional and modern sides of Tokyo, explore anime-related spots, and try authentic street food."  
+
+Formulate a Google Nearby Search API query to find top places to visit, ensuring the city name is not included since latitude and longitude will be provided.
+
+You have to answer in the following JSON format for keywords to search and also set the budget for each category:  
+{"attractions": (["attraction1 query", "attraction2 query"],min_budget,max_budget),
+"events": (["event1 query", "event2 query"],min_budget,max_budget),
+"lunch": ("specific type restaurant query",min_budget,max_budget),
+"dinner": ("specific type restaurant query",min_budget,max_budget)}, 
+where min_budget and max_budget are the minimum and maximum budget for the category
+
+    

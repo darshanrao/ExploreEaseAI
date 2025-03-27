@@ -63,7 +63,7 @@ def get_claude_response(prompt, model="claude-3-haiku-20240307", max_tokens=1000
     raise Exception(f"Failed to get response from Claude after {retries} attempts")
 
 
-# Simple text response
-response = get_claude_response("Write a haiku about programming")
-print(response)
+# # Simple text response
+# response = get_claude_response("Write a haiku about programming")
+# print(response)
 
