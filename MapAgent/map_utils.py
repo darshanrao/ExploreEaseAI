@@ -43,11 +43,6 @@ def get_restaurants(latitude, longitude, radius=1000, meal_type="lunch", min_pri
     response = requests.get(url, params=params)
     return response.json()['results']
 
-
-
-
-
-
 def get_city_attractions(city_lat, city_lng, city_name="the city", radius=25000, attractions_keywords=None, sort_by="reviews"):
     """
     Find tourist attractions at the city level
@@ -138,58 +133,97 @@ def get_city_attractions(city_lat, city_lng, city_name="the city", radius=25000,
     print(f"Total unique attractions found in {city_name}: {len(results)}")
     return results
 
+from datetime import datetime, timedelta
 
-# Eiffel Tower coordinates
-lat = 48.8584
-lng = 2.2945
-
-# # Sample usage based on the provided format
-# lunch_params = ["local cuisine restaurant", 1, 4]
-
-# # Using the function with the sample parameters
-# lunch_restaurants = get_restaurants(
-#     latitude=eiffel_tower_lat,
-#     longitude=eiffel_tower_lng,
-#     radius=1000,  # 1km radius
-#     meal_type="lunch",
-#     min_price=lunch_params[1],  # 20
-#     max_price=lunch_params[2],  # 50
-#     keyword=lunch_params[0]  # "local cuisine restaurant"
-# )
-
-# # Example of processing the results
-# for restaurant in lunch_restaurants[:5]:  # Display first 5 results
-#     print(f"Name: {restaurant['name']}")
-#     print(f"Rating: {restaurant.get('rating', 'N/A')}")
-#     print(f"Address: {restaurant.get('vicinity', 'N/A')}")
-#     print("---")
+def search_eventbrite_events(latitude, longitude, radius=10, event_type=None, 
+                             min_price=None, max_price=None, start_date=None, 
+                             end_date=None, keyword=None, sort_by="date"):
+    """
+    Search for events on Eventbrite based on location and preferences
     
-# # Eiffel Tower coordinates
-# lat = 35.6764
-# lng = 139.6500
-# Sample attraction parameters
-attraction_params = [
-    ["cultural", "general"],
-    50,
-    150
-]
-
-# Using the function with the sample parameters
-attractions = get_city_attractions(
-    city_lat=35.6764,
-    city_lng=139.6500,
-    radius=20000,
-    attractions_keywords=["cultural event", "food festival"],
-    # min_price=3,  # Using 0-4 scale instead of 50
-    # max_price=4   # Using 0-4 scale instead of 150
+    Parameters:
+    - latitude: float - Latitude coordinate
+    - longitude: float - Longitude coordinate
+    - radius: int - Search radius in miles (default: 10)
+    - event_type: str - Category ID for the type of event (e.g., "103" for music)
+    - min_price: str - Price filter ("free" or "paid")
+    - max_price: float - Not directly supported by API, filtered in code
+    - start_date: str - Start date in ISO format (default: today)
+    - end_date: str - End date in ISO format (default: 3 months from today)
+    - keyword: str - Search term to filter events by name or description
+    - sort_by: str - How to sort results ("date", "best", "distance")
     
-)
+    Returns:
+    - list of event results
+    """
+    # Set up API endpoint
+    url = "https://www.eventbriteapi.com/v3/events/search/"
+    
+    # Set up default dates if not provided
+    if not start_date:
+        start_date = datetime.now().isoformat()
+    if not end_date:
+        end_date = (datetime.now() + timedelta(days=90)).isoformat()
+    
+    # Set up parameters
+    params = {
+        "location.latitude": latitude,
+        "location.longitude": longitude,
+        "location.within": f"{radius}mi",
+        "start_date.range_start": start_date,
+        "start_date.range_end": end_date,
+        "sort_by": sort_by
+    }
+    
+    # Add optional parameters if provided
+    if event_type:
+        params["categories"] = event_type
+    
+    if keyword:
+        params["q"] = keyword
+    
+    # Add price filter
+    if min_price is not None:
+        params["price"] = min_price  # "free" or "paid"
+    
+    # Set up headers with authentication
+    headers = {
+        "Authorization": f"Bearer {os.environ.get('EVENTBRITE_API_KEY')}"
+    }
+    
+    try:
+        # Make the API request
+        response = requests.get(url, params=params, headers=headers)
+        response.raise_for_status()  # Raise exception for HTTP errors
+        
+        # Get the events from the response
+        data = response.json()
+        events = data.get('events', [])
+        
+        # Filter by max_price if specified (since API doesn't support this directly)
+        if max_price is not None:
+            filtered_events = []
+            for event in events:
+                # Check if event is free
+                if event.get('is_free', False):
+                    filtered_events.append(event)
+                else:
+                    # Try to get ticket information
+                    ticket_info = event.get('ticket_availability', {})
+                    min_ticket_price = ticket_info.get('minimum_ticket_price', {}).get('value', 0)
+                    
+                    # Add event if price is within range
+                    if min_ticket_price <= max_price:
+                        filtered_events.append(event)
+            return filtered_events
+        
+        return events
+    
+    except requests.exceptions.RequestException as e:
+        print(f"Error searching Eventbrite events: {e}")
+        return []
 
-# Example of processing the results
-for attraction in attractions[:5]:  # Display first 5 results
-    print(f"Name: {attraction['name']}")
-    print(f"Rating: {attraction.get('rating', 'N/A')}")
-    print(f"Address: {attraction.get('vicinity', 'N/A')}")
-    print("---")
-with open("attractions.json", "w") as f:
-    json.dump(attractions, f, indent=4)
+
+
+
+    
