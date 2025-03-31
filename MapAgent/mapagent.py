@@ -1,49 +1,109 @@
-
-
+# map_agent.py
 from uagents import Agent, Context, Protocol, Model
+from uagents.setup import fund_agent_if_low
 from datetime import datetime, timedelta
-# from llm_utils import get_claude_response
-# from calendar_api import GoogleCalendarManager
-# import json
-# from models import TravelRequest, TravelPlan
-# from dataclasses import dataclass
-# from typing import List, Tuple
+import json
+import os
+import logging
+from typing import List, Dict, Any, Tuple, Optional
+import sys
+sys.path.append(os.path.abspath("..")) 
+from models import TravelPlan, ItineraryResponse
+# Import map utilities
+from map_utils import (
+    geocode_location, 
+    calculate_travel_time, 
+    get_restaurants, 
+    get_city_attractions
+)
 
-from map_utils import *
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
+# # Models
+# class TravelPlan(Model):
+#     free_times: List[Dict[str, str]]
+#     attractions: List[Any]
+#     events: List[Any]
+#     lunch: List[Any]
+#     dinner: List[Any]
+#     client_address: Optional[str] = None
+
+# class ItineraryResponse(Model):
+#     itinerary: List[Dict[str, Any]]
+
+# Map Agent class
 class MapAgent:
     def __init__(self, name="map_agent"):
         self.name = name
-        self.identity = Identity.from_string(os.environ.get("AGENT_SEED", "map_agent_seed"))
-        self.agent = Agent(identity=self.identity, name=name)
+        
+        # Create the agent
+        self.agent = Agent(
+            name=name,
+            seed=os.environ.get("AGENT_SEED", "map_agent_seed"),
+            port=8002,
+            endpoint=["http://127.0.0.1:8002/submit"],
+            mailbox={"server": "https://agentverse.ai"}
+        )
+        
+        # Fund the agent if needed
+        fund_agent_if_low(self.agent.wallet.address())
+        
+        # Create protocol
         self.protocol = Protocol("itinerary_protocol")
         
-        # Register message handlers
-        self.agent.add_protocol(self.protocol)
-        self.protocol.on_message(self.handle_itinerary_request)
+        # Register message handler using decorator pattern
+        @self.protocol.on_message(model=TravelPlan)
+        async def handle_travel_plan(ctx: Context, sender: str, msg: TravelPlan):
+            await self.handle_travel_plan(ctx, sender, msg)
+        
+        # Include the protocol in the agent
+        self.agent.include(self.protocol)
+        
+        logger.info(f"Map Agent initialized with address: {self.agent.address}")
     
-    async def handle_itinerary_request(self, ctx: Context, sender: str, msg: dict):
-        """Handle incoming itinerary request messages"""
-        logger.info(f"Received itinerary request from {sender}")
+    async def handle_travel_plan(self, ctx: Context, sender: str, msg: TravelPlan):
+        """Handle incoming travel plan messages"""
+        logger.info(f"Received travel plan from {sender}")
         
         try:
             # Process the request data
             itinerary = self.generate_itinerary(msg)
             
-            # Send back the generated itinerary
-            await ctx.send(sender, {"itinerary": itinerary})
+            # Create the response
+            response = ItineraryResponse(itinerary=itinerary)
+            
+            # Send back the generated itinerary to the sender
+            await ctx.send(sender, response)
             logger.info(f"Sent itinerary response to {sender}")
+            
+            # Check if client_address exists before trying to use it
+            if hasattr(msg, 'client_address') and msg.client_address and msg.client_address != sender:
+                await ctx.send(msg.client_address, response)
+                logger.info(f"Sent itinerary response to client: {msg.client_address}")
+                
         except Exception as e:
-            logger.error(f"Error processing itinerary request: {e}")
-            await ctx.send(sender, {"error": str(e)})
-    
-    def generate_itinerary(self, data):
+            logger.error(f"Error processing travel plan: {e}")
+            # Send an error response as a proper model
+            error_response = ItineraryResponse(itinerary=[{
+                "type": "error",
+                "description": f"Error: {str(e)}"
+            }])
+            await ctx.send(sender, error_response)
+            
+    def generate_itinerary(self, data: TravelPlan) -> List[Dict[str, Any]]:
         """Generate an itinerary based on user preferences and free time slots"""
-        free_times = data.get("free_times", [])
-        attraction_prefs = data.get("attractions", [])
-        event_prefs = data.get("events", [])
-        lunch_prefs = data.get("lunch", [])
-        dinner_prefs = data.get("dinner", [])
+        free_times = data.free_times
+        attraction_prefs = data.attractions
+        event_prefs = data.events
+        lunch_prefs = data.lunch
+        dinner_prefs = data.dinner
+        
+        logger.info(f"Generating itinerary with preferences: {attraction_prefs}, {event_prefs}, {lunch_prefs}, {dinner_prefs}")
         
         itinerary = []
         
@@ -75,9 +135,10 @@ class MapAgent:
             
             itinerary.extend(slot_itinerary)
         
-        # Add this line to print the itinerary
-        print(f"Generated itinerary: {json.dumps(itinerary, indent=2)}")
-        
+        # Save the generated itinerary to a file for debugging
+        with open('generated_itinerary.json', 'w') as f:
+            json.dump(itinerary, f, indent=2)
+            
         return itinerary
     
     def _plan_time_slot(self, start_time, end_time, start_location, end_location,
@@ -120,7 +181,7 @@ class MapAgent:
             if lunch_start <= current_time <= lunch_end and lunch_prefs:
                 # Find a lunch place
                 lunch_keyword = lunch_prefs[0]
-                min_price = lunch_prefs[1] // 20  # Convert dollar amount to Google price level (0-4)
+                min_price = 1 if lunch_prefs[1] <= 20 else lunch_prefs[1] // 20  # Convert dollar amount to Google price level (0-4)
                 max_price = min(4, lunch_prefs[2] // 20)  # Cap at 4 (Google's max price level)
                 
                 restaurants = get_restaurants(
@@ -163,7 +224,7 @@ class MapAgent:
             if dinner_start <= current_time <= dinner_end and dinner_prefs:
                 # Find a dinner place
                 dinner_keyword = dinner_prefs[0]
-                min_price = dinner_prefs[1] // 20  # Convert dollar amount to Google price level (0-4)
+                min_price = 1 if dinner_prefs[1] <= 20 else dinner_prefs[1] // 20  # Convert dollar amount to Google price level (0-4)
                 max_price = min(4, dinner_prefs[2] // 20)  # Cap at 4 (Google's max price level)
                 
                 restaurants = get_restaurants(
@@ -202,70 +263,13 @@ class MapAgent:
                     current_lng = restaurant['geometry']['location']['lng']
                     continue
             
-            # # Check for events
-            # if event_prefs and event_prefs[0]:
-            #     event_keywords = event_prefs[0]
-            #     min_price = event_prefs[1]
-            #     max_price = event_prefs[2]
-                
-            #     # Convert min_price to Eventbrite format
-            #     eventbrite_min_price = "free" if min_price == 0 else "paid"
-                
-            #     for keyword in event_keywords:
-            #         events = search_eventbrite_events(
-            #             current_lat, current_lng,
-            #             radius=10,  # 10 miles radius
-            #             keyword=keyword,
-            #             min_price=eventbrite_min_price,
-            #             max_price=max_price,
-            #             start_date=current_time.isoformat(),
-            #             end_date=(current_time + timedelta(hours=6)).isoformat()
-            #         )
-                    
-            #         if events:
-            #             # Choose the first available event
-            #             event = events[0]
-                        
-            #             # Parse event start and end times
-            #             event_start = datetime.fromisoformat(event.get('start', {}).get('local', current_time.isoformat()))
-            #             event_end = datetime.fromisoformat(event.get('end', {}).get('local', (current_time + timedelta(hours=2)).isoformat()))
-                        
-            #             # Only add event if it fits within our remaining time
-            #             if event_end <= end_time - buffer_time:
-            #                 # Add travel time to event
-            #                 travel_time = 30  # Default 30 minutes
-            #                 current_time += timedelta(minutes=travel_time)
-                            
-            #                 # Add event to itinerary
-            #                 slot_itinerary.append({
-            #                     "type": "event",
-            #                     "time": event_start.strftime("%Y-%m-%d %H:%M"),
-            #                     "end_time": event_end.strftime("%Y-%m-%d %H:%M"),
-            #                     "location": event.get('venue', {}).get('name', 'Event venue'),
-            #                     "coordinates": {
-            #                         "lat": event.get('venue', {}).get('latitude', current_lat),
-            #                         "lng": event.get('venue', {}).get('longitude', current_lng)
-            #                     },
-            #                     "description": event.get('name', {}).get('text', 'Event'),
-            #                     "price": "Free" if event.get('is_free', False) else f"${max_price} or less"
-            #                 })
-                            
-            #                 # Update current time and location
-            #                 current_time = event_end
-            #                 current_location = event.get('venue', {}).get('name', 'Event venue')
-            #                 current_lat = event.get('venue', {}).get('latitude', current_lat)
-            #                 current_lng = event.get('venue', {}).get('longitude', current_lng)
-            #                 continue
-            
-            # If no event, check for attractions
+            # If no meal time, check for attractions
             if attraction_prefs and attraction_prefs[0]:
                 attraction_keywords = attraction_prefs[0]
-                min_price = attraction_prefs[1]
-                max_price = attraction_prefs[2]
                 
                 attractions = get_city_attractions(
                     current_lat, current_lng,
-                    city_name="Los Angeles",
+                    city_name="Current Location",
                     radius=10000,  # 10km radius
                     attractions_keywords=attraction_keywords,
                     sort_by="rating"
@@ -300,14 +304,13 @@ class MapAgent:
             # If we couldn't find any suitable activity, add some buffer time and try again
             current_time += timedelta(minutes=30)
         
-        # Add ending point
+        # Add travel to end location
         travel_time_to_end = calculate_travel_time(
             f"{current_lat},{current_lng}", 
             f"{end_lat},{end_lng}"
         )
         travel_time_minutes = travel_time_to_end // 60
         
-        # Add travel to end location
         slot_itinerary.append({
             "type": "travel",
             "time": current_time.strftime("%Y-%m-%d %H:%M"),
@@ -332,4 +335,9 @@ class MapAgent:
     def run(self):
         """Run the agent"""
         logger.info(f"Starting {self.name} agent...")
+        print(f"Map Agent address: {self.agent.address}")
         self.agent.run()
+
+if __name__ == "__main__":
+    map_agent = MapAgent()
+    map_agent.run()

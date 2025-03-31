@@ -15,28 +15,28 @@
     ],
     "attractions": [
         [
-            "museum",
-            "art gallery"
+            "art museum",
+            "history museum"
         ],
-        100,
+        150,
         300
     ],
     "events": [
         [
             "food festival",
-            "culinary event"
+            "cultural event"
         ],
         50,
         150
     ],
     "lunch": [
-        "local cuisine restaurant",
+        "french cuisine",
         20,
         50
     ],
     "dinner": [
-        "local cuisine restaurant",
-        50,
+        "french cuisine",
+        40,
         100
     ]
 }
