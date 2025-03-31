@@ -1,0 +1,42 @@
+{
+    "free_times": [
+        {
+            "start": "2025-03-27 07:30",
+            "end": "2025-03-27 12:30",
+            "start_location": "Lyon Recreation Center, 1026 W 34th St, Los Angeles, CA 90089, USA",
+            "end_location": "City Park Apartments, 1247 W 30th St, Los Angeles, CA 90007, USA"
+        },
+        {
+            "start": "2025-03-27 14:30",
+            "end": "2025-03-27 21:00",
+            "start_location": "City Park Apartments, 1247 W 30th St, Los Angeles, CA 90007, USA",
+            "end_location": "City Park Apartments, 1247 W 30th St, Los Angeles, CA 90007, USA"
+        }
+    ],
+    "attractions": [
+        [
+            "museum paris",
+            "art gallery paris"
+        ],
+        150,
+        350
+    ],
+    "events": [
+        [
+            "cultural event paris",
+            "history tour paris"
+        ],
+        75,
+        150
+    ],
+    "lunch": [
+        "local cuisine restaurant paris",
+        20,
+        40
+    ],
+    "dinner": [
+        "french restaurant paris",
+        40,
+        80
+    ]
+}

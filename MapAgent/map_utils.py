@@ -4,10 +4,19 @@ import time
 import json
 import logging
 
+from datetime import datetime, timedelta
+import googlemaps
+from geopy.geocoders  import Nominatim
+from uagents import Agent, Context, Protocol
+from uagents.crypto import Identity
+
 from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 def get_restaurants(latitude, longitude, radius=1000, meal_type="lunch", min_price=0, max_price=4, keyword=None):
     """
@@ -135,95 +144,35 @@ def get_city_attractions(city_lat, city_lng, city_name="the city", radius=25000,
 
 from datetime import datetime, timedelta
 
-def search_eventbrite_events(latitude, longitude, radius=10, event_type=None, 
-                             min_price=None, max_price=None, start_date=None, 
-                             end_date=None, keyword=None, sort_by="date"):
-    """
-    Search for events on Eventbrite based on location and preferences
-    
-    Parameters:
-    - latitude: float - Latitude coordinate
-    - longitude: float - Longitude coordinate
-    - radius: int - Search radius in miles (default: 10)
-    - event_type: str - Category ID for the type of event (e.g., "103" for music)
-    - min_price: str - Price filter ("free" or "paid")
-    - max_price: float - Not directly supported by API, filtered in code
-    - start_date: str - Start date in ISO format (default: today)
-    - end_date: str - End date in ISO format (default: 3 months from today)
-    - keyword: str - Search term to filter events by name or description
-    - sort_by: str - How to sort results ("date", "best", "distance")
-    
-    Returns:
-    - list of event results
-    """
-    # Set up API endpoint
-    url = "https://www.eventbriteapi.com/v3/events/search/"
-    
-    # Set up default dates if not provided
-    if not start_date:
-        start_date = datetime.now().isoformat()
-    if not end_date:
-        end_date = (datetime.now() + timedelta(days=90)).isoformat()
-    
-    # Set up parameters
-    params = {
-        "location.latitude": latitude,
-        "location.longitude": longitude,
-        "location.within": f"{radius}mi",
-        "start_date.range_start": start_date,
-        "start_date.range_end": end_date,
-        "sort_by": sort_by
-    }
-    
-    # Add optional parameters if provided
-    if event_type:
-        params["categories"] = event_type
-    
-    if keyword:
-        params["q"] = keyword
-    
-    # Add price filter
-    if min_price is not None:
-        params["price"] = min_price  # "free" or "paid"
-    
-    # Set up headers with authentication
-    headers = {
-        "Authorization": f"Bearer {os.environ.get('EVENTBRITE_API_KEY')}"
-    }
-    
+
+
+# Initialize Google Maps client
+gmaps = googlemaps.Client(key=os.environ.get("GOOGLE_PLACES_API_KEY"))
+
+# Initialize geocoder
+geocoder = Nominatim(user_agent="map_agent")
+
+def geocode_location(location_name):
+    """Convert a location name to latitude and longitude coordinates"""
     try:
-        # Make the API request
-        response = requests.get(url, params=params, headers=headers)
-        response.raise_for_status()  # Raise exception for HTTP errors
-        
-        # Get the events from the response
-        data = response.json()
-        events = data.get('events', [])
-        
-        # Filter by max_price if specified (since API doesn't support this directly)
-        if max_price is not None:
-            filtered_events = []
-            for event in events:
-                # Check if event is free
-                if event.get('is_free', False):
-                    filtered_events.append(event)
-                else:
-                    # Try to get ticket information
-                    ticket_info = event.get('ticket_availability', {})
-                    min_ticket_price = ticket_info.get('minimum_ticket_price', {}).get('value', 0)
-                    
-                    # Add event if price is within range
-                    if min_ticket_price <= max_price:
-                        filtered_events.append(event)
-            return filtered_events
-        
-        return events
-    
-    except requests.exceptions.RequestException as e:
-        print(f"Error searching Eventbrite events: {e}")
-        return []
+        location = geocoder.geocode(location_name)
+        if location:
+            return location.latitude, location.longitude
+        else:
+            logger.error(f"Could not geocode location: {location_name}")
+            return None, None
+    except Exception as e:
+        logger.error(f"Error geocoding location {location_name}: {e}")
+        return None, None
 
-
-
-
-    
+def calculate_travel_time(origin, destination):
+    """Calculate travel time between two locations"""
+    try:
+        directions = gmaps.directions(origin, destination, mode="driving")
+        if directions and len(directions) > 0:
+            leg = directions[0]['legs'][0]
+            return leg['duration']['value']  # Travel time in seconds
+        return 1800  # Default 30 minutes if calculation fails
+    except Exception as e:
+        logger.error(f"Error calculating travel time: {e}")
+        return 1800  # Default 30 minutes

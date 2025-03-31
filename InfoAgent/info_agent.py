@@ -3,11 +3,16 @@ from datetime import datetime, timedelta
 from llm_utils import get_claude_response
 from calendar_api import GoogleCalendarManager
 import json
+
+import os
+import sys
+sys.path.append(os.path.abspath("..")) 
 from models import TravelRequest, TravelPlan
 from dataclasses import dataclass
 from typing import List, Tuple
 # Placeholder function to call LLM (to be implemented)
 import logging
+
 logging.basicConfig(level=logging.DEBUG)
 
 def call_llm(input_data):

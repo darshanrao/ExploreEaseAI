@@ -1,8 +1,7 @@
 # Import the same model definitions
 from uagents import Model
 from typing import List, Tuple
-
-
+from typing import Dict, Any
 class TravelRequest(Model):
     prompt: str
     preferences: dict
@@ -17,3 +16,6 @@ class TravelPlan(Model):
     events: object
     lunch: object
     dinner: object
+    
+class ItineraryResponse(Model):
+    itinerary: List[Dict[str, Any]]
