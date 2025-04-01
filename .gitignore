@@ -20,3 +20,11 @@ __pycache__/
 # Ignore credentials and token files
 InfoAgent/credentials.json
 InfoAgent/token.pickle
+
+
+frontend/node_modules
+frontend/dist
+frontend/.DS_Store
+frontend/server/public
+frontend/vite.config.ts.*
+frontend/*.tar.gz
