@@ -19,12 +19,12 @@
             "art gallery"
         ],
         100,
-        300
+        250
     ],
     "events": [
         [
             "food festival",
-            "culinary event"
+            "cultural event"
         ],
         50,
         150
@@ -36,7 +36,7 @@
     ],
     "dinner": [
         "local cuisine restaurant",
-        50,
-        100
+        30,
+        80
     ]
 }

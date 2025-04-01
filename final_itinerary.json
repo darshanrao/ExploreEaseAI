@@ -1,3 +1,153 @@
 {
-    "itinerary": []
+    "itinerary": [
+        {
+            "type": "start",
+            "time": "2025-03-27 07:30",
+            "location": "Lyon Recreation Center, 1026 W 34th St, Los Angeles, CA 90089, USA",
+            "coordinates": {
+                "lat": 34.0243846,
+                "lng": -118.2883821
+            },
+            "description": "Starting point"
+        },
+        {
+            "type": "attraction",
+            "time": "2025-03-27 07:30",
+            "end_time": "2025-03-27 09:30",
+            "location": "Roth Taylor Fine Art",
+            "coordinates": {
+                "lat": 34.0318736,
+                "lng": -118.3769242
+            },
+            "description": "Visit Roth Taylor Fine Art",
+            "rating": 5
+        },
+        {
+            "type": "attraction",
+            "time": "2025-03-27 09:30",
+            "end_time": "2025-03-27 11:30",
+            "location": "Craig Krull Gallery",
+            "coordinates": {
+                "lat": 34.0281362,
+                "lng": -118.46802
+            },
+            "description": "Visit Craig Krull Gallery",
+            "rating": 5
+        },
+        {
+            "type": "lunch",
+            "time": "2025-03-27 11:30",
+            "end_time": "2025-03-27 12:30",
+            "location": "Tokyo Fast Food",
+            "coordinates": {
+                "lat": 34.0418538,
+                "lng": -118.4610945
+            },
+            "description": "Lunch at Tokyo Fast Food",
+            "price_level": 1,
+            "rating": 4.6
+        },
+        {
+            "type": "travel",
+            "time": "2025-03-27 12:30",
+            "end_time": "2025-03-27 12:47",
+            "location": "Travel to City Park Apartments, 1247 W 30th St, Los Angeles, CA 90007, USA",
+            "coordinates": {
+                "lat": 34.0418538,
+                "lng": -118.4610945
+            },
+            "description": "Travel to final destination (17 minutes)"
+        },
+        {
+            "type": "end",
+            "time": "2025-03-27 12:47",
+            "location": "City Park Apartments, 1247 W 30th St, Los Angeles, CA 90007, USA",
+            "coordinates": {
+                "lat": 34.0277027,
+                "lng": -118.2904867
+            },
+            "description": "End of itinerary"
+        },
+        {
+            "type": "start",
+            "time": "2025-03-27 14:30",
+            "location": "City Park Apartments, 1247 W 30th St, Los Angeles, CA 90007, USA",
+            "coordinates": {
+                "lat": 34.0277027,
+                "lng": -118.2904867
+            },
+            "description": "Starting point"
+        },
+        {
+            "type": "attraction",
+            "time": "2025-03-27 14:30",
+            "end_time": "2025-03-27 16:30",
+            "location": "Roth Taylor Fine Art",
+            "coordinates": {
+                "lat": 34.0318736,
+                "lng": -118.3769242
+            },
+            "description": "Visit Roth Taylor Fine Art",
+            "rating": 5
+        },
+        {
+            "type": "attraction",
+            "time": "2025-03-27 16:30",
+            "end_time": "2025-03-27 18:30",
+            "location": "Craig Krull Gallery",
+            "coordinates": {
+                "lat": 34.0281362,
+                "lng": -118.46802
+            },
+            "description": "Visit Craig Krull Gallery",
+            "rating": 5
+        },
+        {
+            "type": "dinner",
+            "time": "2025-03-27 18:30",
+            "end_time": "2025-03-27 20:00",
+            "location": "Il Forno",
+            "coordinates": {
+                "lat": 34.0199422,
+                "lng": -118.4548446
+            },
+            "description": "Dinner at Il Forno",
+            "price_level": 2,
+            "rating": 4.5
+        },
+        {
+            "type": "dinner",
+            "time": "2025-03-27 20:00",
+            "end_time": "2025-03-27 21:30",
+            "location": "Ramenya",
+            "coordinates": {
+                "lat": 34.0290012,
+                "lng": -118.44278
+            },
+            "description": "Dinner at Ramenya",
+            "price_level": 1,
+            "rating": 4.6
+        },
+        {
+            "type": "travel",
+            "time": "2025-03-27 21:30",
+            "end_time": "2025-03-27 22:00",
+            "location": "Travel to City Park Apartments, 1247 W 30th St, Los Angeles, CA 90007, USA",
+            "coordinates": {
+                "lat": 34.0290012,
+                "lng": -118.44278
+            },
+            "description": "Travel to final destination (30 minutes)"
+        },
+        {
+            "type": "end",
+            "time": "2025-03-27 22:00",
+            "location": "City Park Apartments, 1247 W 30th St, Los Angeles, CA 90007, USA",
+            "coordinates": {
+                "lat": 34.0277027,
+                "lng": -118.2904867
+            },
+            "description": "End of itinerary"
+        }
+    ]
 }

@@ -145,25 +145,78 @@ def get_city_attractions(city_lat, city_lng, city_name="the city", radius=25000,
 from datetime import datetime, timedelta
 
 
-
+googlemaps_api_key = os.environ.get("GOOGLE_PLACES_API_KEY")
 # Initialize Google Maps client
 gmaps = googlemaps.Client(key=os.environ.get("GOOGLE_PLACES_API_KEY"))
 
-# Initialize geocoder
-geocoder = Nominatim(user_agent="map_agent")
+# # Initialize geocoder
+# geocoder = Nominatim(user_agent="map_agent")
+
+# def geocode_location(location_name):
+#     """Convert a location name to latitude and longitude coordinates"""
+#     try:
+#         location = geocoder.geocode(location_name)
+#         if location:
+#             return location.latitude, location.longitude
+#         else:
+#             logger.error(f"Could not geocode location: {location_name}")
+#             return None, None
+#     except Exception as e:
+#         logger.error(f"Error geocoding location {location_name}: {e}")
+#         return None, None
+
 
 def geocode_location(location_name):
     """Convert a location name to latitude and longitude coordinates"""
+    # Check cache first to avoid redundant API calls
+    if hasattr(geocode_location, 'cache') and location_name in geocode_location.cache:
+        return geocode_location.cache[location_name]
+    
+    # Initialize cache if it doesn't exist
+    if not hasattr(geocode_location, 'cache'):
+        geocode_location.cache = {}
+    
+    # Replace with your actual Google Maps API key
+    api_key = googlemaps_api_key
+    base_url = "https://maps.googleapis.com/maps/api/geocode/json"
+    
     try:
-        location = geocoder.geocode(location_name)
-        if location:
-            return location.latitude, location.longitude
+        # Prepare request parameters
+        params = {
+            'address': location_name,
+            'key': api_key
+        }
+        
+        # Make the request
+        response = requests.get(base_url, params=params, timeout=10)
+        response.raise_for_status()
+        
+        # Parse the response
+        data = response.json()
+        
+        # Check status
+        if data['status'] != 'OK':
+            logger.error(f"Could not geocode location: {location_name}, status: {data['status']}")
+            if 'error_message' in data:
+                logger.error(f"Error message: {data['error_message']}")
+            return None, None
+        
+        # Extract coordinates from the first result
+        if data['results']:
+            location = data['results'][0]['geometry']['location']
+            result = (location['lat'], location['lng'])
+            
+            # Cache the result
+            geocode_location.cache[location_name] = result
+            return result
         else:
             logger.error(f"Could not geocode location: {location_name}")
             return None, None
+            
     except Exception as e:
         logger.error(f"Error geocoding location {location_name}: {e}")
         return None, None
+
 
 def calculate_travel_time(origin, destination):
     """Calculate travel time between two locations"""

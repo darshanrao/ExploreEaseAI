@@ -1,4 +1,10 @@
 from map_utils import *
+import logging
+# import geocoder  # Ensure you have the correct geocoder package installed
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 # Eiffel Tower coordinates
@@ -63,26 +69,34 @@ lng = 2.2945
     
     
 # Search for music events within 5 miles of San Francisco
-events = search_eventbrite_events(
-    latitude=37.7749,
-    longitude=-122.4194,
-    radius=5,
-    event_type="103",  # Music category ID
-    min_price="free",  # Only free events
-    keyword="concert",
-    sort_by="date"
-)
+# events = search_eventbrite_events(
+#     latitude=37.7749,
+#     longitude=-122.4194,
+#     radius=5,
+#     event_type="103",  # Music category ID
+#     min_price="free",  # Only free events
+#     keyword="concert",
+#     sort_by="date"
+# )
 
-# Display event information
-for event in events:
-    name = event.get('name', {}).get('text', 'No name')
-    start_time = event.get('start', {}).get('local', 'No date')
-    venue_id = event.get('venue_id')
-    is_free = event.get('is_free', False)
-    url = event.get('url', 'No URL')
+# # Display event information
+# for event in events:
+#     name = event.get('name', {}).get('text', 'No name')
+#     start_time = event.get('start', {}).get('local', 'No date')
+#     venue_id = event.get('venue_id')
+#     is_free = event.get('is_free', False)
+#     url = event.get('url', 'No URL')
     
-    print(f"Event: {name}")
-    print(f"Date: {start_time}")
-    print(f"Free: {'Yes' if is_free else 'No'}")
-    print(f"URL: {url}")
-    print("-" * 50)
+#     print(f"Event: {name}")
+#     print(f"Date: {start_time}")
+#     print(f"Free: {'Yes' if is_free else 'No'}")
+#     print(f"URL: {url}")
+#     print("-" * 50)
+
+
+
+# Example usage
+if __name__ == "__main__":
+    test_location = "Sacramento, CA"
+    coords = geocode_location(test_location)
+    logger.info(f"Coordinates for {test_location}: {coords}")
