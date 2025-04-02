@@ -181,8 +181,8 @@ class MapAgent:
             if lunch_start <= current_time <= lunch_end and lunch_prefs:
                 # Find a lunch place
                 lunch_keyword = lunch_prefs[0]
-                min_price = 1 if lunch_prefs[1] <= 20 else lunch_prefs[1] // 20  # Convert dollar amount to Google price level (0-4)
-                max_price = min(4, lunch_prefs[2] // 20)  # Cap at 4 (Google's max price level)
+                min_price = lunch_prefs[1] if lunch_prefs[1] <= 4 else lunch_prefs[1] // 20  # Convert dollar amount to Google price level (0-4)
+                max_price = lunch_prefs[2] if lunch_prefs[2] <= 4 else 4
                 
                 restaurants = get_restaurants(
                     current_lat, current_lng, 
@@ -224,8 +224,8 @@ class MapAgent:
             if dinner_start <= current_time <= dinner_end and dinner_prefs:
                 # Find a dinner place
                 dinner_keyword = dinner_prefs[0]
-                min_price = 1 if dinner_prefs[1] <= 20 else dinner_prefs[1] // 20  # Convert dollar amount to Google price level (0-4)
-                max_price = min(4, dinner_prefs[2] // 20)  # Cap at 4 (Google's max price level)
+                min_price = dinner_prefs[1] if dinner_prefs[1] <= 4 else dinner_prefs[1] // 20  # Convert dollar amount to Google price level (0-4)
+                max_price = dinner_prefs[2] if dinner_prefs[2] <= 4 else 4
                 
                 restaurants = get_restaurants(
                     current_lat, current_lng, 

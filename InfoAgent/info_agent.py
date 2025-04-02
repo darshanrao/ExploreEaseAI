@@ -41,16 +41,16 @@ def call_llm(input_data):
     
     Formulate a Google Nearby Search API query to find top places to visit, ensuring the city name is not included since latitude and longitude will be provided.
 
-    You MUST answer in the following JSON format for keywords to search and also set the budget for each category:
+    You MUST answer in the following JSON format for keywords to search and also set the budget range for each category and should be range (0-4):
     
     {{
-      "attractions": [["attraction1 query", "attraction2 query"], min_budget, max_budget],
-      "events": [["event1 query", "event2 query"], min_budget, max_budget],
-      "lunch": ["specific type restaurant query", min_budget, max_budget],
-      "dinner": ["specific type restaurant query", min_budget, max_budget]
+      "attractions": [["attraction1 query", "attraction2 query"], min_budget (0-4), max_budget(0-4)],
+      "events": [["event1 query", "event2 query"], min_budget (0-4), max_budget (0-4)],
+      "lunch": ["specific type restaurant query", min_budget (0-4), max_budget (0-4)],
+      "dinner": ["specific type restaurant query", min_budget (0-4), max_budget (0-4)]
     }}
     
-    where min_budget and max_budget are the minimum and maximum budget for the category.
+    where min_budget and max_budget are the minimum and maximum budget range for the category.
     
     IMPORTANT: Ensure your response is a valid JSON object with the exact structure shown above.
     Do not include any explanations or text outside the JSON object.
