@@ -62,10 +62,18 @@ export const addEventToCalendar = async (
     const isAuthenticated = await hasCalendarAccess();
     
     if (!isAuthenticated) {
+      // Store the event data in session storage before redirecting
+      sessionStorage.setItem('pendingCalendarEvent', JSON.stringify({
+        eventData,
+        timestamp: Date.now(),
+        returnUrl: window.location.pathname
+      }));
+      
+      console.log('Storing calendar event data before authorization:', eventData);
+      
       // If not authenticated, try to initialize the API
       await initializeCalendarApi();
-      // Wait a bit for potential redirect and authentication flow
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // The page will redirect to Google OAuth, so we don't continue execution
       return false;
     }
     
@@ -79,6 +87,13 @@ export const addEventToCalendar = async (
     if (!response.ok) {
       const errorData = await response.json();
       if (response.status === 401) {
+        // Store the event data in session storage before redirecting
+        sessionStorage.setItem('pendingCalendarEvent', JSON.stringify({
+          eventData,
+          timestamp: Date.now(),
+          returnUrl: window.location.pathname
+        }));
+        
         // If unauthorized, redirect to auth flow
         initializeCalendarApi();
         throw new Error('Please authorize Google Calendar access first');
@@ -97,11 +112,14 @@ export const addEventToCalendar = async (
 export const initializeCalendarApi = async (): Promise<void> => {
   try {
     // Use the server's API endpoint for OAuth
-    const authUrl = `/api/auth/google`;
+    // Include the current path as state so we can redirect back to the same page
+    const currentPath = window.location.pathname;
+    const authUrl = `/api/auth/google?state=${encodeURIComponent(currentPath)}`;
+    
+    console.log("Redirecting to Google OAuth:", authUrl);
     
     // Using the server endpoint ensures the redirect URI used in OAuth is the same
     // as the one configured in the server and Google Console
-    
     window.location.href = authUrl;
     return Promise.resolve();
   } catch (error) {

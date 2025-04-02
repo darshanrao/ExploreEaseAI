@@ -7,11 +7,12 @@ import { useQuery } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from '@/lib/queryClient';
 import RecommendationCard from '@/components/ui/recommendation-card';
-import TripOverview from '@/components/ui/trip-overview';
-import { hasCalendarAccess, exportToCalendar, initializeCalendarApi } from '@/lib/calendar-api';
-import { getPlaceRecommendations } from '@/lib/places-api';
-import { CalendarPlus, RefreshCw } from 'lucide-react';
-import { Recommendation } from '@shared/schema';
+import CalendarConnect from '@/components/ui/calendar-connect';
+import ItineraryView from '@/components/ui/itinerary-view';
+import { hasCalendarAccess, exportToCalendar, initializeCalendarApi, addEventToCalendar } from '@/lib/calendar-api';
+import { getPlaceRecommendations, getItinerary } from '@/lib/places-api';
+import { CalendarPlus, RefreshCw, Map } from 'lucide-react';
+import { Recommendation, Itinerary } from '@shared/schema';
 
 const RecommendationsPage: React.FC = () => {
   const [_, navigate] = useLocation();
@@ -21,11 +22,65 @@ const RecommendationsPage: React.FC = () => {
   const [addingToCalendar, setAddingToCalendar] = useState(false);
   const [isLoadingRealTimeData, setIsLoadingRealTimeData] = useState(false);
   const [realTimeRecommendations, setRealTimeRecommendations] = useState<Recommendation[] | null>(null);
+  const [itinerary, setItinerary] = useState<Itinerary | null>(null);
+  const [isLoadingItinerary, setIsLoadingItinerary] = useState(false);
+  const [showItinerary, setShowItinerary] = useState(false);
 
-  // Check if calendar is connected
+  // Check if calendar is connected and handle OAuth return
   useEffect(() => {
     const checkCalendarConnection = async () => {
       try {
+        // Check if we just returned from an OAuth flow
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('auth_success')) {
+          toast({
+            title: "Success",
+            description: "Successfully connected to Google Calendar",
+          });
+          // Remove the query param to prevent showing the toast on page refreshes
+          window.history.replaceState({}, document.title, window.location.pathname);
+          
+          // Wait a moment before checking status to ensure the session is properly set
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Check if we have a pending calendar event to add
+          const pendingEventJson = sessionStorage.getItem('pendingCalendarEvent');
+          if (pendingEventJson) {
+            try {
+              console.log('Found pending calendar event after OAuth on recommendations page');
+              const pendingEvent = JSON.parse(pendingEventJson);
+              
+              // Only process events that are less than 10 minutes old
+              const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
+              if (pendingEvent.timestamp && pendingEvent.timestamp > tenMinutesAgo) {
+                // Clear from session storage first
+                sessionStorage.removeItem('pendingCalendarEvent');
+                
+                // Try to add the event now that we're authenticated
+                const success = await addEventToCalendar(pendingEvent.eventData);
+                
+                if (success) {
+                  toast({
+                    title: "Success",
+                    description: `Added ${pendingEvent.eventData.title} to your Google Calendar`,
+                  });
+                }
+              } else {
+                // Clear old pending events
+                sessionStorage.removeItem('pendingCalendarEvent');
+              }
+            } catch (error) {
+              console.error('Error processing pending calendar event:', error);
+              toast({
+                title: "Error",
+                description: "Failed to add your event to the calendar after authorization.",
+                variant: "destructive",
+              });
+            }
+          }
+        }
+        
+        // Check if calendar is connected
         const connected = await hasCalendarAccess();
         setIsCalendarConnected(connected);
       } catch (error) {
@@ -34,15 +89,20 @@ const RecommendationsPage: React.FC = () => {
     };
     
     checkCalendarConnection();
-  }, []);
+  }, [toast]);
 
   const { data: tripDetails } = useQuery<{
-    startDate: string;
-    endDate: string;
-    destination: string;
-    locationTypes: string[];
-    timePreferences: string[];
-    interests: string | null;
+    date_from: string;
+    date_to: string;
+    location: string;
+    travel_style: string;
+    food_preference: string;
+    budget: string;
+    transport_mode: string;
+    time_preference: string;
+    activity_intensity: string;
+    interests: string[];
+    custom_preferences?: string;
   }>({
     queryKey: ['/api/trip-details'],
   });
@@ -64,11 +124,16 @@ const RecommendationsPage: React.FC = () => {
     try {
       setIsLoadingRealTimeData(true);
       const realData = await getPlaceRecommendations(
-        tripDetails.destination,
+        tripDetails.location,
         {
-          locationTypes: tripDetails.locationTypes,
-          timePreferences: tripDetails.timePreferences,
-          interests: tripDetails.interests
+          travel_style: tripDetails.travel_style,
+          food_preference: tripDetails.food_preference,
+          budget: tripDetails.budget,
+          transport_mode: tripDetails.transport_mode,
+          time_preference: tripDetails.time_preference,
+          activity_intensity: tripDetails.activity_intensity,
+          interests: tripDetails.interests,
+          custom_preferences: tripDetails.custom_preferences
         }
       );
       
@@ -83,6 +148,49 @@ const RecommendationsPage: React.FC = () => {
       });
     } finally {
       setIsLoadingRealTimeData(false);
+    }
+  };
+  
+  const loadItinerary = async () => {
+    if (!tripDetails) return;
+    
+    try {
+      setIsLoadingItinerary(true);
+      
+      const itineraryData = await getItinerary(
+        tripDetails.location,
+        {
+          travel_style: tripDetails.travel_style,
+          food_preference: tripDetails.food_preference,
+          budget: tripDetails.budget,
+          transport_mode: tripDetails.transport_mode,
+          time_preference: tripDetails.time_preference,
+          activity_intensity: tripDetails.activity_intensity,
+          interests: tripDetails.interests,
+          custom_preferences: tripDetails.custom_preferences,
+          date_from: tripDetails.date_from,
+          date_to: tripDetails.date_to
+        }
+      );
+      
+      if (itineraryData) {
+        setItinerary(itineraryData);
+        setShowItinerary(true);
+      } else {
+        toast({
+          title: "Notice",
+          description: "Could not load detailed itinerary data. Please try again later.",
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching itinerary data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load itinerary. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingItinerary(false);
     }
   };
 
@@ -127,9 +235,9 @@ const RecommendationsPage: React.FC = () => {
       
       // Export trip to Google Calendar
       const result = await exportToCalendar(currentRecommendations, {
-        startDate: tripDetails.startDate,
-        endDate: tripDetails.endDate,
-        destination: tripDetails.destination
+        startDate: tripDetails.date_from,
+        endDate: tripDetails.date_to,
+        destination: tripDetails.location
       });
       
       if (result) {
@@ -171,11 +279,11 @@ const RecommendationsPage: React.FC = () => {
           <div className="flex flex-wrap gap-2 text-sm">
             <span className="px-2 py-1 bg-gray-100 rounded-md text-gray-600">
               <i className="fas fa-map-marker-alt text-xs mr-1"></i>
-              <span>{tripDetails.destination}</span>
+              <span>{tripDetails.location}</span>
             </span>
             <span className="px-2 py-1 bg-gray-100 rounded-md text-gray-600">
               <i className="fas fa-calendar text-xs mr-1"></i>
-              <span>{formatDateRange(tripDetails.startDate, tripDetails.endDate)}</span>
+              <span>{formatDateRange(tripDetails.date_from, tripDetails.date_to)}</span>
             </span>
           </div>
         )}
@@ -219,29 +327,48 @@ const RecommendationsPage: React.FC = () => {
             ))}
           </div>
           
-          <div className="mb-8">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">Trip Overview</h3>
-              <Button
-                onClick={handleAddToCalendar}
-                disabled={addingToCalendar}
-                className="bg-primary text-white flex items-center"
-              >
-                {addingToCalendar ? (
-                  <span className="flex items-center">
-                    <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
-                    Adding...
-                  </span>
-                ) : (
-                  <>
-                    <CalendarPlus className="h-4 w-4 mr-2" />
-                    Add to Google Calendar
-                  </>
-                )}
-              </Button>
-            </div>
-            <TripOverview recommendations={realTimeRecommendations || recommendations || []} />
+          <div className="flex justify-between items-center mb-8">
+            <Button
+              onClick={() => {
+                if (!itinerary) {
+                  loadItinerary();
+                } else {
+                  setShowItinerary(!showItinerary);
+                }
+              }}
+              disabled={isLoadingItinerary}
+              variant="outline"
+              className="flex items-center"
+            >
+              {isLoadingItinerary ? (
+                <span className="flex items-center">
+                  <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></span>
+                  Loading itinerary...
+                </span>
+              ) : (
+                <>
+                  <Map className="h-4 w-4 mr-2" />
+                  {showItinerary ? 'Hide Detailed Itinerary' : 
+                    (itinerary ? 'Show Detailed Itinerary' : 'View Detailed Trip Plan')}
+                </>
+              )}
+            </Button>
+            
+            {/* Calendar connect button */}
+            {tripDetails && (
+              <CalendarConnect 
+                onConnected={setIsCalendarConnected} 
+                tripDetails={tripDetails}
+              />
+            )}
           </div>
+          
+          {/* Show itinerary view when available and toggled on */}
+          {showItinerary && itinerary && (
+            <div className="mb-8">
+              <ItineraryView itinerary={itinerary} />
+            </div>
+          )}
           
           <Card>
             <CardContent className="pt-6">

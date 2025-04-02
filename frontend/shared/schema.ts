@@ -17,12 +17,17 @@ export const users = pgTable("users", {
 export const preferences = pgTable("preferences", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id),
-  startDate: text("start_date").notNull(),
-  endDate: text("end_date").notNull(),
-  destination: text("destination").notNull(),
-  interests: text("interests"),
-  locationTypes: text("location_types").array().notNull(),
-  timePreferences: text("time_preferences").array().notNull(),
+  date_from: text("date_from").notNull(),
+  date_to: text("date_to").notNull(),
+  location: text("location").notNull(),
+  travel_style: text("travel_style").notNull(),
+  food_preference: text("food_preference").notNull(),
+  budget: text("budget").notNull(),
+  transport_mode: text("transport_mode").notNull(),
+  time_preference: text("time_preference").notNull(),
+  activity_intensity: text("activity_intensity").notNull(),
+  interests: text("interests").array().notNull(),
+  custom_preferences: text("custom_preferences"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -38,6 +43,7 @@ export const recommendations = pgTable("recommendations", {
   rating: text("rating").notNull(),
   reviewCount: integer("review_count").notNull(),
   distance: text("distance").notNull(),
+  location: text("location"),
   openingHours: text("opening_hours").notNull(),
   description: text("description").notNull(),
   metadata: json("metadata"),
@@ -84,7 +90,6 @@ export const insertPreferenceSchema = createInsertSchema(preferences).omit({
 
 export const insertRecommendationSchema = createInsertSchema(recommendations).omit({
   id: true,
-  userId: true,
   createdAt: true,
 });
 
@@ -96,7 +101,6 @@ export const insertFeedbackSchema = createInsertSchema(feedback).omit({
 
 export const insertCalendarEventSchema = createInsertSchema(calendarEvents).omit({
   id: true,
-  userId: true,
   createdAt: true,
 });
 
@@ -122,3 +126,19 @@ export type GoogleToken = {
   id_token: string;
   expires_at: number;
 };
+
+// New types for itinerary data from backend agent
+export type ItineraryPoint = {
+  type: "start" | "attraction";
+  time: string;
+  end_time?: string;
+  location: string;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+  description: string;
+  rating?: number;
+};
+
+export type Itinerary = ItineraryPoint[];

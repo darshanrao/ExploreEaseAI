@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertPreferenceSchema, insertFeedbackSchema, GoogleToken } from "@shared/schema";
@@ -7,6 +7,8 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { config } from "./config";
 import { google } from "googleapis";
+import { callFastApi } from "./fastapi-client";
+import { getPlacesByInterests } from "./places-api";
 
 // Extend Express Request type to include session
 declare module 'express-session' {
@@ -61,9 +63,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/auth/google/callback", 
     passport.authenticate("google", { failureRedirect: "/" }),
     (req, res) => {
+      // Get the state parameter that contains the original path
+      const state = req.query.state as string || '/preferences';
+      
       // Successful authentication
-      // Redirect to recommendations page (client-side route)
-      res.redirect("/?redirect=recommendations");
+      // Add a query parameter for the frontend to detect successful auth
+      // Use absolute URL to ensure proper redirection
+      console.log(`OAuth callback redirecting to: ${state}?auth_success=true`);
+      res.redirect(`${req.protocol}://${req.headers.host}${state}?auth_success=true`);
     }
   );
   
@@ -299,8 +306,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             title: event.summary,
             description: event.description || null,
             location: event.location || null,
-            startTime: eventStart.toISOString(),
-            endTime: eventEnd.toISOString(),
+            startTime: new Date(eventStart),
+            endTime: new Date(eventEnd),
             eventId: googleEvent.data.id || `trip-${Date.now()}-${rec.id}`
           });
           
@@ -323,6 +330,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Failed to export trip to calendar:', error);
       res.status(500).json({ error: "Failed to export trip to calendar" });
+    }
+  });
+  
+  // Add a single event to Google Calendar
+  app.post("/api/calendar/add-event", async (req: Request, res: Response) => {
+    try {
+      // Check authentication
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated with Google" });
+      }
+      
+      // Validate request body
+      const { title, description, start_time, end_time, location } = req.body;
+      
+      if (!title || !start_time || !end_time) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+      
+      // Get user and tokens from passport session
+      const user = req.user as any;
+      
+      if (!user || !user.tokens) {
+        return res.status(401).json({ error: "Google tokens not available" });
+      }
+      
+      // Set up OAuth2 client with user's tokens
+      const oauth2Client = new google.auth.OAuth2(
+        config.googleClientId,
+        config.googleClientSecret,
+        config.googleRedirectUri
+      );
+      
+      oauth2Client.setCredentials({
+        access_token: user.tokens.access_token,
+        refresh_token: user.tokens.refresh_token,
+        expiry_date: user.tokens.expires_at
+      });
+      
+      // Create Google Calendar API client
+      const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+      
+      // Create event in Google Calendar
+      const event = {
+        summary: title,
+        description: description || '',
+        location: location || '',
+        start: {
+          dateTime: start_time,
+          timeZone: 'UTC'
+        },
+        end: {
+          dateTime: end_time,
+          timeZone: 'UTC'
+        }
+      };
+      
+      const googleEvent = await calendar.events.insert({
+        calendarId: 'primary',
+        requestBody: event
+      });
+      
+      // Save event to our database for tracking
+      const calendarEvent = await storage.saveCalendarEvent({
+        userId: 1, // In a real app, use the authenticated user's ID
+        title: event.summary,
+        description: event.description || null,
+        location: event.location || null,
+        startTime: new Date(start_time),
+        endTime: new Date(end_time),
+        eventId: googleEvent.data.id || `event-${Date.now()}`
+      });
+      
+      res.json({
+        success: true,
+        message: "Event added to your Google Calendar",
+        event: calendarEvent
+      });
+    } catch (error) {
+      console.error('Failed to add event to calendar:', error);
+      res.status(500).json({ error: "Failed to add event to calendar" });
     }
   });
 
@@ -364,6 +451,256 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting recommendations:", error);
       res.status(500).json({ error: "Failed to get recommendations" });
+    }
+  });
+  
+  // Interest-based places API using Google Places API
+  app.post("/api/places-by-interests", getPlacesByInterests);
+  
+  app.post("/api/places-by-interests-old", async (req: Request, res: Response) => {
+    try {
+      const { location, interests } = req.body;
+      
+      if (!location || !interests || !Array.isArray(interests)) {
+        return res.status(400).json({ error: "Invalid request. Location and interests array are required." });
+      }
+      
+      console.log("Received request for places in", location, "with interests:", interests);
+      
+      // Try to call FastAPI backend
+      try {
+        console.log("Calling FastAPI for place recommendations...");
+        const fastApiResponse = await callFastApi('places-by-interests', 'POST', { 
+          location, 
+          interests 
+        });
+        
+        if (fastApiResponse && fastApiResponse.recommendations && Array.isArray(fastApiResponse.recommendations)) {
+          console.log("Successfully received recommendations from FastAPI");
+          
+          // Store the recommendations from FastAPI
+          const storedRecommendations = [];
+          for (const rec of fastApiResponse.recommendations) {
+            try {
+              const storedRec = await storage.createRecommendation({
+                name: rec.title,
+                description: rec.description,
+                location: rec.location || rec.title,
+                distance: rec.location || "City Center",
+                type: rec.category,
+                day: 1,
+                timeOfDay: ["morning", "afternoon", "evening"][Math.floor(Math.random() * 3)],
+                rating: rec.rating ? rec.rating.toString() : "4.5",
+                reviewCount: 500 + Math.floor(Math.random() * 500),
+                openingHours: "9:00 AM - 5:00 PM",
+                userId: 1, // Default user ID
+                preferenceId: 1 // Use the latest preference ID
+              });
+              
+              storedRecommendations.push(storedRec);
+            } catch (err) {
+              console.error("Error storing FastAPI recommendation:", err);
+            }
+          }
+          
+          if (storedRecommendations.length > 0) {
+            return res.json(storedRecommendations);
+          }
+        }
+      } catch (fastApiError) {
+        console.error("FastAPI error:", fastApiError);
+        // Continue with fallback implementation if FastAPI call fails
+      }
+      
+      // Generate fallback recommendations based on interests
+      console.log("Using fallback recommendations for", location);
+      const recommendations = [];
+      
+      // Map of interest types to sample places
+      const interestPlaces: Record<string, any[]> = {
+        "Food": [
+          {
+            title: `${location} Fine Dining`,
+            description: `Enjoy delicious local cuisine at this popular restaurant in ${location}.`,
+            location: `Downtown ${location}`,
+            category: "Food",
+            rating: 4.7,
+            price_level: "$$$"
+          },
+          {
+            title: `${location} Street Food`,
+            description: `Try authentic street food at this famous market in ${location}.`,
+            location: `Market District, ${location}`,
+            category: "Food",
+            rating: 4.5,
+            price_level: "$"
+          },
+          {
+            title: `${location} Cafe`,
+            description: `Relax with coffee and pastries at this charming cafe.`,
+            location: `Arts District, ${location}`,
+            category: "Food",
+            rating: 4.6,
+            price_level: "$$"
+          }
+        ],
+        "Shopping": [
+          {
+            title: `${location} Shopping Mall`,
+            description: `The largest shopping center in ${location} with hundreds of stores.`,
+            location: `Central ${location}`,
+            category: "Shopping",
+            rating: 4.4,
+            price_level: "$$"
+          },
+          {
+            title: `${location} Boutiques`,
+            description: `Explore unique boutique shops in the fashion district.`,
+            location: `Fashion District, ${location}`,
+            category: "Shopping",
+            rating: 4.3,
+            price_level: "$$$"
+          },
+          {
+            title: `${location} Market`,
+            description: `Traditional market with local products and souvenirs.`,
+            location: `Old Town, ${location}`,
+            category: "Shopping",
+            rating: 4.8,
+            price_level: "$"
+          }
+        ],
+        "Nature": [
+          {
+            title: `${location} Park`,
+            description: `Beautiful urban park with walking paths and gardens.`,
+            location: `North ${location}`,
+            category: "Nature",
+            rating: 4.9,
+            price_level: "Free"
+          },
+          {
+            title: `${location} Botanical Garden`,
+            description: `Stunning collection of plants and flowers from around the world.`,
+            location: `East ${location}`,
+            category: "Nature",
+            rating: 4.7,
+            price_level: "$"
+          },
+          {
+            title: `${location} Waterfront`,
+            description: `Scenic waterfront area with amazing views.`,
+            location: `South ${location}`,
+            category: "Nature",
+            rating: 4.6,
+            price_level: "Free"
+          }
+        ],
+        "Museums": [
+          {
+            title: `${location} History Museum`,
+            description: `Learn about the rich history of ${location} at this comprehensive museum.`,
+            location: `Museum District, ${location}`,
+            category: "Museums",
+            rating: 4.8,
+            price_level: "$$"
+          },
+          {
+            title: `${location} Art Gallery`,
+            description: `Contemporary art from local and international artists.`,
+            location: `Arts District, ${location}`,
+            category: "Museums", 
+            rating: 4.5,
+            price_level: "$"
+          },
+          {
+            title: `${location} Science Center`,
+            description: `Interactive exhibits and fun learning experiences for all ages.`,
+            location: `University District, ${location}`,
+            category: "Museums",
+            rating: 4.7,
+            price_level: "$$"
+          }
+        ],
+        "Nightlife": [
+          {
+            title: `${location} Nightclub`,
+            description: `Popular nightclub with great music and atmosphere.`,
+            location: `Downtown ${location}`,
+            category: "Nightlife",
+            rating: 4.4,
+            price_level: "$$$"
+          },
+          {
+            title: `${location} Jazz Bar`,
+            description: `Intimate venue featuring live jazz music every night.`,
+            location: `Music District, ${location}`,
+            category: "Nightlife",
+            rating: 4.6,
+            price_level: "$$"
+          },
+          {
+            title: `${location} Rooftop Bar`,
+            description: `Enjoy drinks with spectacular views of the city.`,
+            location: `High-rise District, ${location}`,
+            category: "Nightlife",
+            rating: 4.8,
+            price_level: "$$$"
+          }
+        ],
+      };
+      
+      // Add recommendations for each requested interest
+      for (const interest of interests) {
+        const interestKey = Object.keys(interestPlaces).find(
+          key => key.toLowerCase() === interest.toLowerCase()
+        ) || interest;
+        
+        if (interestPlaces[interestKey]) {
+          recommendations.push(...interestPlaces[interestKey]);
+        } else {
+          // Generic recommendation if interest not found
+          recommendations.push({
+            title: `${location} ${interest} Attraction`,
+            description: `Popular ${interest.toLowerCase()} destination in ${location}.`,
+            location: `${location} City Center`,
+            category: interest,
+            rating: 4.5,
+            price_level: "$$"
+          });
+        }
+      }
+      
+      // Store recommendations in database
+      const storedRecommendations = [];
+      
+      for (const rec of recommendations) {
+        try {
+          const storedRec = await storage.createRecommendation({
+            name: rec.title,
+            description: rec.description,
+            location: rec.location || rec.title,
+            distance: rec.location || "City Center",
+            type: rec.category,
+            day: 1,
+            timeOfDay: ["morning", "afternoon", "evening"][Math.floor(Math.random() * 3)],
+            rating: rec.rating ? rec.rating.toString() : "4.5",
+            reviewCount: 500 + Math.floor(Math.random() * 500),
+            openingHours: "9:00 AM - 5:00 PM",
+            userId: 1, // Default user ID
+            preferenceId: 1 // Use the latest preference ID
+          });
+          
+          storedRecommendations.push(storedRec);
+        } catch (err) {
+          console.error("Error storing recommendation:", err);
+        }
+      }
+      
+      res.json(storedRecommendations);
+    } catch (error) {
+      console.error("Error processing places by interests:", error);
+      res.status(500).json({ error: "Failed to get places by interests" });
     }
   });
 
@@ -434,15 +771,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate destination-specific recommendations API endpoint
   app.post("/api/recommendations/generate", async (req: Request, res: Response) => {
     try {
-      const { destination, locationTypes, timePreferences, interests } = req.body;
+      const { 
+        destination, 
+        travel_style, 
+        food_preference, 
+        budget, 
+        transport_mode, 
+        time_preference, 
+        activity_intensity, 
+        interests, 
+        custom_preferences 
+      } = req.body;
       
       if (!destination) {
         return res.status(400).json({ error: "Destination is required" });
       }
       
-      const destinationLower = destination.toLowerCase();
+      // Try to call FastAPI backend first
+      try {
+        console.log("Calling FastAPI for recommendations...");
+        const fastApiResult = await callFastApi('api/recommendations/generate', 'POST', { 
+          location: destination,
+          travel_style,
+          food_preference,
+          budget,
+          transport_mode,
+          time_preference,
+          activity_intensity,
+          interests,
+          custom_preferences
+        });
+        
+        // If we successfully get recommendations from FastAPI, return them
+        if (fastApiResult && fastApiResult.recommendations && fastApiResult.recommendations.length > 0) {
+          console.log("Successfully received recommendations from FastAPI");
+          return res.json({ recommendations: fastApiResult.recommendations });
+        }
+      } catch (fastApiError) {
+        console.error("Failed to get recommendations from FastAPI:", fastApiError);
+        // Continue with the fallback implementation if FastAPI call fails
+      }
       
-      // Generate recommendations based on the specific destination
+      // Fallback: Generate recommendations based on the specific destination
+      const destinationLower = destination.toLowerCase();
       let recommendations = [];
       
       // Los Angeles recommendations
@@ -749,6 +1120,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error generating destination recommendations:", error);
       res.status(500).json({ error: "Failed to generate recommendations for this destination" });
+    }
+  });
+
+  // Get detailed itinerary with points, times and coordinates
+  app.post("/api/itinerary", async (req: Request, res: Response) => {
+    try {
+      const { 
+        location, 
+        travel_style, 
+        food_preference, 
+        budget, 
+        transport_mode, 
+        time_preference, 
+        activity_intensity, 
+        interests, 
+        custom_preferences,
+        date_from,
+        date_to
+      } = req.body;
+      
+      if (!location) {
+        return res.status(400).json({ error: "Location is required" });
+      }
+      
+      // Set explicit content type to ensure JSON response
+      res.setHeader('Content-Type', 'application/json');
+      
+      // Try to call FastAPI backend first for real itinerary data
+      try {
+        console.log("Calling FastAPI for itinerary data...");
+        const fastApiResult = await callFastApi('api/itinerary', 'POST', { 
+          location,
+          travel_style,
+          food_preference,
+          budget,
+          transport_mode,
+          time_preference,
+          activity_intensity,
+          interests,
+          custom_preferences,
+          date_from,
+          date_to
+        });
+        
+        if (fastApiResult && Array.isArray(fastApiResult)) {
+          return res.json(fastApiResult);
+        }
+        
+        if (fastApiResult && fastApiResult.itinerary && Array.isArray(fastApiResult.itinerary)) {
+          return res.json(fastApiResult.itinerary);
+        }
+      } catch (fastApiError) {
+        console.error("FastAPI error when fetching itinerary:", fastApiError);
+        // Continue with fallback implementation if FastAPI call fails
+      }
+      
+      // Fallback: Generate a sample itinerary
+      console.log("Using fallback itinerary data for", location);
+      
+      // Create a date object from the date_from parameter or use current date
+      const startDate = date_from ? new Date(date_from) : new Date();
+      
+      // Format date in the required format (YYYY-MM-DD)
+      const dateStr = startDate.toISOString().split('T')[0];
+      
+      // Fallback sample itinerary structure
+      const sampleItinerary = [
+        {
+          "type": "start",
+          "time": `${dateStr} 07:30`,
+          "location": `${location} Recreation Center`,
+          "coordinates": {
+            "lat": 34.0243846,
+            "lng": -118.2883821
+          },
+          "description": "Starting point"
+        },
+        {
+          "type": "attraction",
+          "time": `${dateStr} 08:30`,
+          "end_time": `${dateStr} 10:30`,
+          "location": `${location} Museum of Art`,
+          "coordinates": {
+            "lat": 34.0318736,
+            "lng": -118.3769242
+          },
+          "description": `Visit the famous ${location} Museum of Art`,
+          "rating": 5
+        },
+        {
+          "type": "attraction",
+          "time": `${dateStr} 11:00`,
+          "end_time": `${dateStr} 13:00`,
+          "location": `${location} Historical Garden`,
+          "coordinates": {
+            "lat": 34.0281362,
+            "lng": -118.46802
+          },
+          "description": `Explore the beautiful ${location} Historical Garden`,
+          "rating": 4.5
+        },
+        {
+          "type": "attraction",
+          "time": `${dateStr} 14:00`,
+          "end_time": `${dateStr} 16:00`,
+          "location": `${location} Shopping District`,
+          "coordinates": {
+            "lat": 34.0112345,
+            "lng": -118.2345678
+          },
+          "description": `Shop at the popular ${location} Shopping District`,
+          "rating": 4.2
+        }
+      ];
+      
+      // Return the JSON data with explicit JSON stringify to ensure proper formatting
+      return res.send(JSON.stringify(sampleItinerary));
+    } catch (error) {
+      console.error("Error generating itinerary:", error);
+      res.status(500).json({ error: "Failed to generate itinerary" });
     }
   });
 

@@ -81,10 +81,17 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({ recommendation 
       const endDate = new Date(startDate);
       endDate.setHours(startDate.getHours() + 2);
       
+      // Create a detailed description
+      let description = recommendation.description + '\n\n';
+      description += `Type: ${recommendation.type}\n`;
+      description += `Rating: ${recommendation.rating} (${recommendation.reviewCount}+ reviews)\n`;
+      description += `Location: ${recommendation.distance}\n`;
+      description += `Open Hours: ${recommendation.openingHours}\n`;
+      
       // Add the event to the calendar
       const success = await addEventToCalendar({
         title: recommendation.name,
-        description: recommendation.description,
+        description: description,
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
         location: recommendation.distance || '' // Use distance as location since location might not be available
