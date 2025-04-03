@@ -9,27 +9,27 @@
     ],
     "attractions": [
         [
-            "Hollywood landmarks",
-            "beaches"
+            "hollywood landmarks",
+            "beach"
         ],
         2,
         4
     ],
     "events": [
         [
-            "movie studio tours",
-            "celebrity sightseeing"
+            "movie studio tour",
+            "hollywood walking tour"
         ],
         2,
         4
     ],
     "lunch": [
-        "California cuisine",
+        "california cuisine",
         2,
         4
     ],
     "dinner": [
-        "California cuisine",
+        "california cuisine",
         2,
         4
     ]

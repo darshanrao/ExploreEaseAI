@@ -135,8 +135,8 @@ async def handle_travel_request(ctx: Context, sender: str, msg: TravelRequest):
 agent = Agent(
     name="travel_planner", 
     seed="travel_secret",
-    port=8000,
-    endpoint=["http://127.0.0.1:8000/submit"],  # Add this
+    port=8003,
+    endpoint=["http://127.0.0.1:8003/submit"],  # Add this
     mailbox={"server": "https://agentverse.ai"}  # Add this
 )
 agent.include(travel_protocol)

@@ -132,9 +132,9 @@ class MapAgent:
             
             itinerary.extend(slot_itinerary)
         
-        # Save the generated itinerary to a file for debugging
-        with open('generated_itinerary.json', 'w') as f:
-            json.dump(itinerary, f, indent=2)
+        # # Save the generated itinerary to a file for debugging
+        # with open('generated_itinerary.json', 'w') as f:
+        #     json.dump(itinerary, f, indent=2)
             
         return itinerary
     

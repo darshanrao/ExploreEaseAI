@@ -1,0 +1,123 @@
+[
+  {
+    "type": "start",
+    "time": "2025-04-15 09:00",
+    "location": "Los Angeles, California, US",
+    "coordinates": {
+      "lat": 34.0549076,
+      "lng": -118.242643
+    },
+    "description": "Starting point"
+  },
+  {
+    "type": "attraction",
+    "time": "2025-04-15 09:00",
+    "end_time": "2025-04-15 11:00",
+    "location": "The Walk Of Fun Hollywood",
+    "coordinates": {
+      "lat": 34.1013572,
+      "lng": -118.3428884
+    },
+    "description": "Visit The Walk Of Fun Hollywood",
+    "rating": 5,
+    "attraction_type": "tourist_attraction",
+    "vicinity": "NEW MEETING POINT] In front of Andre's Pizza | 7038 Hollywood Blvd, Los Angeles CA90028, Los Angeles",
+    "image_reference": "AeeoHcKTrjJdPnJVQ9KfvVbT62_vbHu0fqSaaaLKhVEUWYf_YJFrVQRPyjANRTyAeC9ojKe88sPcQj3xiFY77zXuYHCrSp6ze_0FG0-2wBkNApe_YsHumf0qX8SXRsbbpP_fx0sUInpMtEpNW0nbtGidFCaISNGsVVao9K0CGFKHnMnkd1tTedtqk_OmnLDpMrESYIXcZLja3LZz3dWLpyRZ32aRPGqgcGd3Gs_oFrgqwD2vyFGwZTJv_2976LapNCJy7esPOcmg1pe4HJJhrFEhweDnBdsWCxURgYgxcNxnI3abbuJgU00"
+  },
+  {
+    "type": "attraction",
+    "time": "2025-04-15 11:00",
+    "end_time": "2025-04-15 13:00",
+    "location": "The Walk Of Fun Hollywood",
+    "coordinates": {
+      "lat": 34.1013572,
+      "lng": -118.3428884
+    },
+    "description": "Visit The Walk Of Fun Hollywood",
+    "rating": 5,
+    "attraction_type": "tourist_attraction",
+    "vicinity": "NEW MEETING POINT] In front of Andre's Pizza | 7038 Hollywood Blvd, Los Angeles CA90028, Los Angeles",
+    "image_reference": "AeeoHcKGZyw047FjgKjxtAyjvUBeyTgRlPj3AwMekbfR2nOUsokEqxJsGyr1_MAnHIchnImSqzxehIxCsn2LFGhuDUFujWiIARMHdOjl9SkzX7U72vHoRBxKsB-N46wnYg_xKNuJZZEOh-_DTZZrNu2S8R_LPfS2c1YsZOK2UWVR89IKABb4wkD_OzoBJ2uXi1urTnqqgzUd66LIswAQKvqV_mjdf2_x7NmNz4UIrZZwH7UldJ1dv-G9MHY6A1CCZY_ipU8FF_wOkFz3DmdaCbNWOOaMz8XUvmPPpbjEsBnesKHqrrpGDZU"
+  },
+  {
+    "type": "attraction",
+    "time": "2025-04-15 13:00",
+    "end_time": "2025-04-15 15:00",
+    "location": "The Walk Of Fun Hollywood",
+    "coordinates": {
+      "lat": 34.1013572,
+      "lng": -118.3428884
+    },
+    "description": "Visit The Walk Of Fun Hollywood",
+    "rating": 5,
+    "attraction_type": "tourist_attraction",
+    "vicinity": "NEW MEETING POINT] In front of Andre's Pizza | 7038 Hollywood Blvd, Los Angeles CA90028, Los Angeles",
+    "image_reference": "AeeoHcJjEnEbF6-ml-JFR9PBK-1IGwN96WOVWkuETmvJ-FNPbymQxg51PpIW_W8wDe1ETAh2_MURD-yAYFk-JM_2R2yRF-zZpNkKsLseLD47K4Q_9927Z_IwX65sLVgJY4F4VAFQVrtpBxHxtO7wlp_9WXUMDvrWhaXUWUcH0pYz0S9L46Aa6JAqkomx9pksaA3pW4K3l-j7Xtw6DMRFBCNQC8Tp0GXUknLyRX8cI6l0R66kh0Ptimz2Xuo3ZrF9LD0wwXVeopCEq3UcXYaDx_4D9-HCveaNhAf7WgzxciLxdMvbnbbTZ0U"
+  },
+  {
+    "type": "attraction",
+    "time": "2025-04-15 15:00",
+    "end_time": "2025-04-15 17:00",
+    "location": "The Walk Of Fun Hollywood",
+    "coordinates": {
+      "lat": 34.1013572,
+      "lng": -118.3428884
+    },
+    "description": "Visit The Walk Of Fun Hollywood",
+    "rating": 5,
+    "attraction_type": "tourist_attraction",
+    "vicinity": "NEW MEETING POINT] In front of Andre's Pizza | 7038 Hollywood Blvd, Los Angeles CA90028, Los Angeles",
+    "image_reference": "AeeoHcJqiPP_nkHRAiw1pb51IUGssijg3CWEzJJwzs7XE3LRG-Vfzc_Jisoh8eBC_wAvR7cTqlcYYFQh2Q9v58Z9nZvVLuFvwb5pQ4TJMxfphfGvY2P-i2XdQjAJdm-v0YagP7r38PJq12-MCNlqLfz1JE3Tom815cWiwimnFLStx9lejCdc___VLPybZY41EBi4qcCZAjvI15pTunJmNq19Gzng4gS0VunZcjLWsTz6oyWPPRsQIpuCYqhPnSOdAvvjHYq7HkzjZTojpmeHFWkPM6ii1V2Qmin1zAcBMMgySoGkoqtI8u8"
+  },
+  {
+    "type": "attraction",
+    "time": "2025-04-15 17:00",
+    "end_time": "2025-04-15 19:00",
+    "location": "The Walk Of Fun Hollywood",
+    "coordinates": {
+      "lat": 34.1013572,
+      "lng": -118.3428884
+    },
+    "description": "Visit The Walk Of Fun Hollywood",
+    "rating": 5,
+    "attraction_type": "tourist_attraction",
+    "vicinity": "NEW MEETING POINT] In front of Andre's Pizza | 7038 Hollywood Blvd, Los Angeles CA90028, Los Angeles",
+    "image_reference": "AeeoHcImC5wf-rcYqrIRaLeYKJTjGsH8YbUrNGi2ulsovtFcgJkoSYK-RgBRzqCs008ZJFCnPdswBIO2gLym1LuRJPbOEbAv-ujmcw6Qot9qkfyIjQNMIYwpsMrgcD7A5lZwhXGT9MDRsQTWkUFelcfVicPVc11z-YOrC8lnccqrHztBoFnN5OL4pfTLAODI1qR3uP1TS6JNzHetyZ9jxwFLogO2YoiGW71XgAXf7RYkFh2g3F8ENv5s0dpio6y93Tg_mRh81kBnc24UHACwn-WtgwqtHdMCtv_zE6TfRLwRRRatshwx69U"
+  },
+  {
+    "type": "attraction",
+    "time": "2025-04-15 19:00",
+    "end_time": "2025-04-15 21:00",
+    "location": "The Walk Of Fun Hollywood",
+    "coordinates": {
+      "lat": 34.1013572,
+      "lng": -118.3428884
+    },
+    "description": "Visit The Walk Of Fun Hollywood",
+    "rating": 5,
+    "attraction_type": "tourist_attraction",
+    "vicinity": "NEW MEETING POINT] In front of Andre's Pizza | 7038 Hollywood Blvd, Los Angeles CA90028, Los Angeles",
+    "image_reference": "AUy1YQ3iqpNhIG-GmLaxNLgcgXyITxAYbvPr9LrPzvOQnrUKTB2ISKMSz4RUpJuMK3akTgyLE9AGu1iOZJmH2-nbW5TrM7Vzs_3rTz08sMtls-oZMMrD7TAIiGkWkvgwoh4ZpfZunmBnYSSTFFLe3cbOfJ95ppWUee_K145t7cF39x4yUsHbjU0R3xofBu9-klVqFpSSrTKCrVOxWE0rV7NYtqW5tmYmEJrFgzy_r5J4Bz9h3I1DJwdq7k1uvkUlhu1gdXwquY6yNFUr5_tc0QAiTwa6uzp_RpmpawjuBDLKagdkbOz0Ah0"
+  },
+  {
+    "type": "travel",
+    "time": "2025-04-15 21:00",
+    "end_time": "2025-04-15 21:23",
+    "location": "Travel to City Park Apartments, 1247 W 30th St, Los Angeles, CA 90007, USA",
+    "coordinates": {
+      "lat": 34.1013572,
+      "lng": -118.3428884
+    },
+    "description": "Travel to final destination (23 minutes)"
+  },
+  {
+    "type": "end",
+    "time": "2025-04-15 21:23",
+    "location": "City Park Apartments, 1247 W 30th St, Los Angeles, CA 90007, USA",
+    "coordinates": {
+      "lat": 34.0277027,
+      "lng": -118.2904867
+    },
+    "description": "End of itinerary"
+  }
+]

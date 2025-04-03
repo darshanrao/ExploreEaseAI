@@ -19,3 +19,5 @@ class TravelPlan(Model):
     
 class ItineraryResponse(Model):
     itinerary: List[Dict[str, Any]]
+    
+    

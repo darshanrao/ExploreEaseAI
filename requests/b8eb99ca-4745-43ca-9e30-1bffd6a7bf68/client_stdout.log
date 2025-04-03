@@ -1,0 +1,13 @@
+WARNING:  [travel_client]: Endpoint configuration overrides mailbox setting.
+Client agent address: agent1qdadxf4zp2pz84eej7tlpgcvr273ghz78z8v7sqputv54ma4l8dkcmupde0
+Reading travel request from: travel_request.json
+INFO:     [travel_client]: Starting agent with address: agent1qdadxf4zp2pz84eej7tlpgcvr273ghz78z8v7sqputv54ma4l8dkcmupde0
+INFO:     [travel_client]: Loaded travel request from travel_request.json
+INFO:     [travel_client]: Request details: Location: Los Angeles, Dates: 2025-04-15 09:00 to 2025-04-15 22:00
+INFO:     [travel_client]: Sending travel request to Information Agent: agent1qvghn56ppww3cq5fv96m23jgvklev333evj42we6v0s7exszmf4hga3lh0a
+INFO:     [travel_client]: Agent inspector available at https://agentverse.ai/inspect/?uri=http%3A//127.0.0.1%3A8001&address=agent1qdadxf4zp2pz84eej7tlpgcvr273ghz78z8v7sqputv54ma4l8dkcmupde0
+INFO:     [travel_client]: Starting server on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     [uagents.registration]: Registration on Almanac API successful
+INFO:     [uagents.registration]: Almanac contract registration is up to date!
+ERROR:    [travel_client]: Timeout waiting for dispense response
+ERROR:    [travel_client]: No final itinerary received within timeout period
