@@ -6,17 +6,14 @@ import json
 import os
 import logging
 from typing import List, Dict, Any, Tuple, Optional
+from dotenv import load_dotenv
+# Load environment variables from .env file
+load_dotenv()
 import sys
 sys.path.append(os.path.abspath("..")) 
 from models import TravelPlan, ItineraryResponse
 # Import map utilities
-from map_utils import (
-    geocode_location, 
-    calculate_travel_time, 
-    get_restaurants, 
-    get_city_attractions
-)
-
+from map_utils import *
 # Set up logging
 logging.basicConfig(
     level=logging.INFO,
@@ -210,7 +207,10 @@ class MapAgent:
                         },
                         "description": f"Lunch at {restaurant.get('name')}",
                         "price_level": restaurant.get('price_level', 'Unknown'),
-                        "rating": restaurant.get('rating', 'Not rated')
+                        "rating": restaurant.get('rating', 'Not rated'),
+                        "vicinity": restaurant.get('vicinity', 'Unknown'),
+                        "image_reference": restaurant.get('photos', [{}])[0].get('photo_reference', '')
+                        
                     })
                     
                     # Update current time and location
@@ -253,7 +253,10 @@ class MapAgent:
                         },
                         "description": f"Dinner at {restaurant.get('name')}",
                         "price_level": restaurant.get('price_level', 'Unknown'),
-                        "rating": restaurant.get('rating', 'Not rated')
+                        "rating": restaurant.get('rating', 'Not rated'),
+                        "vicinity": restaurant.get('vicinity', 'Unknown'),
+                        "image_reference": restaurant.get('photos', [{}])[0].get('photo_reference', '')
+                        
                     })
                     
                     # Update current time and location
@@ -291,7 +294,12 @@ class MapAgent:
                             "lng": attraction['geometry']['location']['lng']
                         },
                         "description": f"Visit {attraction.get('name')}",
-                        "rating": attraction.get('rating', 'Not rated')
+                        "rating": attraction.get('rating', 'Not rated'),
+                        "attraction_type": attraction.get('types', ['Unknown'])[0],
+                        "vicinity": attraction.get('vicinity', 'Unknown'),
+                        # Uncomment the following line to include an image URL if available
+                        "image_reference": attraction.get('photos', [{}])[0].get('photo_reference', '')
+                        
                     })
                     
                     # Update current time and location

@@ -229,3 +229,25 @@ def calculate_travel_time(origin, destination):
     except Exception as e:
         logger.error(f"Error calculating travel time: {e}")
         return 1800  # Default 30 minutes
+
+
+def get_place_photo_url(photo_reference, max_width=400):
+    """
+    Generate a Google Places photo URL from a photo reference
+    
+    Args:
+        photo_reference (str): The photo reference string from Google Places API
+        max_width (int): Maximum width of the image in pixels
+        
+    Returns:
+        str: URL to the Google Places photo
+    """
+    if not photo_reference:
+        return None
+        
+    api_key = os.environ.get('GOOGLE_PLACES_API_KEY')
+    if not api_key:
+        logger.error("GOOGLE_PLACES_API_KEY environment variable not set")
+        return None
+        
+    return f"https://maps.googleapis.com/maps/api/place/photo?maxwidth={max_width}&photoreference={photo_reference}&key={api_key}"

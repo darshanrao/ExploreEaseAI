@@ -1,42 +1,36 @@
 {
     "free_times": [
         {
-            "start": "2025-03-27 07:30",
-            "end": "2025-03-27 12:30",
-            "start_location": "Lyon Recreation Center, 1026 W 34th St, Los Angeles, CA 90089, USA",
-            "end_location": "City Park Apartments, 1247 W 30th St, Los Angeles, CA 90007, USA"
-        },
-        {
-            "start": "2025-03-27 14:30",
-            "end": "2025-03-27 21:00",
-            "start_location": "City Park Apartments, 1247 W 30th St, Los Angeles, CA 90007, USA",
+            "start": "2025-04-15 09:00",
+            "end": "2025-04-15 21:00",
+            "start_location": "Los Angeles, California, US",
             "end_location": "City Park Apartments, 1247 W 30th St, Los Angeles, CA 90007, USA"
         }
     ],
     "attractions": [
         [
-            "museum",
-            "art gallery"
+            "Hollywood landmarks",
+            "beaches"
         ],
-        100,
-        250
+        2,
+        4
     ],
     "events": [
         [
-            "food festival",
-            "cultural event"
+            "movie studio tours",
+            "celebrity sightseeing"
         ],
-        50,
-        150
+        2,
+        4
     ],
     "lunch": [
-        "local cuisine restaurant",
-        20,
-        50
+        "California cuisine",
+        2,
+        4
     ],
     "dinner": [
-        "local cuisine restaurant",
-        30,
-        80
+        "California cuisine",
+        2,
+        4
     ]
 }

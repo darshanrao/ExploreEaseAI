@@ -14,6 +14,9 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+# Path to the JSON input file
+INPUT_FILE_PATH = "travel_request.json"
+
 # Create a client agent
 client_agent = Agent(
     name="travel_client",
@@ -100,26 +103,39 @@ async def handle_error_message(ctx: Context, sender: str, msg: ErrorMessage):
 
 client_agent.include(client_protocol)
 
+# Function to load travel request from JSON file
+def load_travel_request():
+    try:
+        if not os.path.exists(INPUT_FILE_PATH):
+            logging.error(f"Input file not found: {INPUT_FILE_PATH}")
+            sys.exit(1)
+            
+        with open(INPUT_FILE_PATH, 'r') as file:
+            data = json.load(file)
+            
+        # Create TravelRequest object from JSON data
+        request = TravelRequest(
+            prompt=data.get("prompt", ""),
+            preferences=data.get("preferences", {}),
+            date_from=data.get("date_from", ""),
+            date_to=data.get("date_to", ""),
+            location=data.get("location", "")
+        )
+        
+        return request
+    except Exception as e:
+        logging.error(f"Error loading travel request: {e}")
+        sys.exit(1)
+
 # Information Agent address
 info_agent_address = os.environ.get("INFOAGENT")
 @client_agent.on_event("startup")
 async def on_startup(ctx: Context):
-    request = TravelRequest(
-        prompt="I want to explore local cuisine and visit museums",
-        preferences={
-            "travel_style": "cultural",
-            "food_preference": "local cuisine",
-            "budget": "$300-$500",
-            "transport_mode": "public transport",
-            "time_preference": "morning",
-            "activity_intensity": "moderate",
-            "interests": ["museums", "food", "history"],
-            "custom_preferences": "I prefer indoor activities if it rains"
-        },
-        date_from="2025-03-27 06:00",
-        date_to="2025-03-27 22:00",
-        location="Paris"
-    )
+    # Load travel request from JSON file
+    request = load_travel_request()
+    
+    ctx.logger.info(f"Loaded travel request from {INPUT_FILE_PATH}")
+    ctx.logger.info(f"Request details: Location: {request.location}, Dates: {request.date_from} to {request.date_to}")
     
     ctx.logger.info(f"Sending travel request to Information Agent: {info_agent_address}")
     await ctx.send(info_agent_address, request)
@@ -131,4 +147,5 @@ async def on_startup(ctx: Context):
 
 if __name__ == "__main__":
     print(f"Client agent address: {client_agent.address}")
+    print(f"Reading travel request from: {INPUT_FILE_PATH}")
     client_agent.run()
