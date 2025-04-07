@@ -12,7 +12,7 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from 'wouter';
 
@@ -23,10 +23,11 @@ const preferencesSchema = z.object({
   travel_style: z.string().min(1, { message: "Travel style is required" }),
   food_preference: z.string().min(1, { message: "Food preference is required" }),
   budget: z.string().min(1, { message: "Budget is required" }),
-  transport_mode: z.string().min(1, { message: "Transport mode is required" }),
   time_preference: z.string().min(1, { message: "Time preference is required" }),
   activity_intensity: z.string().min(1, { message: "Activity intensity is required" }),
-  interests: z.array(z.string()).min(1, { message: "Select at least one interest" }),
+  // Removed required interests and transport_mode fields
+  transport_mode: z.string().default("walking"),
+  interests: z.array(z.string()).default(["Food", "Museums", "Nature"]),
   custom_preferences: z.string().optional()
 });
 
@@ -87,9 +88,36 @@ const PreferencesPage: React.FC = () => {
     });
   };
 
-  const form = useForm<PreferencesFormValues>({
-    resolver: zodResolver(preferencesSchema),
-    defaultValues: {
+  // Initialize form with saved preferences if available
+  const getSavedPreferences = () => {
+    const travelRequestDataJson = sessionStorage.getItem('travelRequestData');
+    
+    if (travelRequestDataJson) {
+      try {
+        const travelRequestData = JSON.parse(travelRequestDataJson);
+        if (travelRequestData && travelRequestData.preferences) {
+          // Return saved preferences
+          return {
+            date_from: travelRequestData.date_from || '',
+            date_to: travelRequestData.date_to || '',
+            location: travelRequestData.location || '',
+            travel_style: travelRequestData.preferences.travel_style || 'cultural',
+            food_preference: travelRequestData.preferences.food_preference || 'local cuisine',
+            budget: travelRequestData.preferences.budget || '2',
+            transport_mode: travelRequestData.preferences.transport_mode || 'public transport',
+            time_preference: travelRequestData.preferences.time_preference || 'morning',
+            activity_intensity: travelRequestData.preferences.activity_intensity || 'moderate',
+            interests: travelRequestData.preferences.interests || [],
+            custom_preferences: travelRequestData.preferences.custom_preferences || ''
+          };
+        }
+      } catch (e) {
+        console.error('Error parsing saved preferences:', e);
+      }
+    }
+    
+    // Return default values if no saved preferences
+    return {
       date_from: '',
       date_to: '',
       location: '',
@@ -101,12 +129,43 @@ const PreferencesPage: React.FC = () => {
       activity_intensity: 'moderate',
       interests: [],
       custom_preferences: ''
-    }
+    };
+  };
+
+  const form = useForm<PreferencesFormValues>({
+    resolver: zodResolver(preferencesSchema),
+    defaultValues: getSavedPreferences()
   });
 
   const onSubmit = async (data: PreferencesFormValues) => {
     try {
+      // First save preferences in the original way for backward compatibility
       await apiRequest('POST', '/api/preferences', data);
+      
+      // Generate a prompt based on user preferences
+      const prompt = `Create a detailed itinerary for ${data.location} with ${data.travel_style} activities and ${data.food_preference}`;
+      
+      // Store preferences in sessionStorage for use in RecommendationsPage
+      const travelRequestData = {
+        prompt,
+        preferences: data,
+        date_from: data.date_from,
+        date_to: data.date_to,
+        location: data.location
+      };
+      
+      sessionStorage.setItem('travelRequestData', JSON.stringify(travelRequestData));
+      
+      // Add a flag to indicate that itinerary should be automatically generated
+      sessionStorage.setItem('autoGenerateItinerary', 'true');
+      
+      // Add a flag to indicate that recommendations should be refreshed
+      sessionStorage.setItem('forceRefreshRecommendations', 'true');
+      
+      // Invalidate the trip details and recommendations query cache
+      queryClient.invalidateQueries({ queryKey: ['/api/trip-details'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/recommendations'] });
+      
       navigate('/recommendations');
     } catch (error) {
       toast({
@@ -156,7 +215,17 @@ const PreferencesPage: React.FC = () => {
                       <FormItem>
                         <FormLabel>Start Date</FormLabel>
                         <FormControl>
-                          <Input type="datetime-local" {...field} />
+                          <Input 
+                            type="datetime-local" 
+                            {...field} 
+                            onChange={(e) => {
+                              field.onChange(e.target.value);
+                              // Force the dropdown to close by programmatically triggering a click outside
+                              setTimeout(() => {
+                                document.body.click();
+                              }, 100);
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -170,7 +239,17 @@ const PreferencesPage: React.FC = () => {
                       <FormItem>
                         <FormLabel>End Date</FormLabel>
                         <FormControl>
-                          <Input type="datetime-local" {...field} />
+                          <Input 
+                            type="datetime-local" 
+                            {...field} 
+                            onChange={(e) => {
+                              field.onChange(e.target.value);
+                              // Force the dropdown to close by programmatically triggering a click outside
+                              setTimeout(() => {
+                                document.body.click();
+                              }, 100);
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -248,7 +327,7 @@ const PreferencesPage: React.FC = () => {
                   />
                 </div>
                 
-                <div className="grid gap-4 mb-4 sm:grid-cols-2">
+                <div className="mb-4">
                   <FormField
                     control={form.control}
                     name="budget"
@@ -284,30 +363,8 @@ const PreferencesPage: React.FC = () => {
                     )}
                   />
                   
-                  <FormField
-                    control={form.control}
-                    name="transport_mode"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Transport Mode</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select transport mode" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="public transport">Public Transport</SelectItem>
-                            <SelectItem value="rental car">Rental Car</SelectItem>
-                            <SelectItem value="walking">Walking</SelectItem>
-                            <SelectItem value="biking">Biking</SelectItem>
-                            <SelectItem value="guided tours">Guided Tours</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {/* Transport mode hidden field - using default value */}
+                  <input type="hidden" {...form.register("transport_mode")} />
                 </div>
                 
                 <FormField
@@ -384,47 +441,8 @@ const PreferencesPage: React.FC = () => {
                   )}
                 />
                 
-                <FormField
-                  control={form.control}
-                  name="interests"
-                  render={() => (
-                    <FormItem className="mb-6">
-                      <FormLabel>Interests</FormLabel>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {['Museums', 'Food', 'History', 'Art', 'Nature', 'Shopping', 'Nightlife', 'Architecture', 'Sports'].map((interest) => (
-                          <FormField
-                            key={interest}
-                            control={form.control}
-                            name="interests"
-                            render={({ field }) => {
-                              return (
-                                <Label
-                                  className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50"
-                                  htmlFor={`interest-${interest}`}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    id={`interest-${interest}`}
-                                    className="mr-2"
-                                    checked={field.value?.includes(interest)}
-                                    onChange={(e) => {
-                                      const checked = e.target.checked;
-                                      return checked
-                                        ? field.onChange([...field.value, interest])
-                                        : field.onChange(field.value?.filter((value) => value !== interest));
-                                    }}
-                                  />
-                                  {interest}
-                                </Label>
-                              );
-                            }}
-                          />
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Interests hidden field - using default value */}
+                <input type="hidden" {...form.register("interests")} />
                 
                 <FormField
                   control={form.control}

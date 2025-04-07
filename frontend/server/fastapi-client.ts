@@ -3,7 +3,7 @@ import { config } from './config';
 
 // Create an Axios instance for FastAPI
 const fastApiClient = axios.create({
-  baseURL: config.fastApiUrl,
+  baseURL: 'http://localhost:3000', // Force the correct URL
   timeout: 10000, // 10 seconds timeout
   headers: {
     'Content-Type': 'application/json',

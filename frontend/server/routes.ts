@@ -7,8 +7,8 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { config } from "./config";
 import { google } from "googleapis";
-import { callFastApi } from "./fastapi-client";
 import { getPlacesByInterests } from "./places-api";
+import { submitTravelRequest, getTravelRequestStatus, getTravelResult } from './itinerary-service';
 
 // Extend Express Request type to include session
 declare module 'express-session' {
@@ -16,6 +16,8 @@ declare module 'express-session' {
     googleToken?: GoogleToken;
   }
 }
+
+// Using Express for all API endpoints - no FastAPI server needed
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up passport for Google OAuth
@@ -28,27 +30,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Configure Google OAuth strategy
-  passport.use(new GoogleStrategy({
-    clientID: config.googleClientId,
-    clientSecret: config.googleClientSecret,
-    callbackURL: config.googleRedirectUri,
-    scope: ['profile', 'email', 'https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/calendar.events']
-  }, (accessToken, refreshToken, profile, done) => {
-    // Store tokens for later use
-    const expiryDate = new Date().getTime() + 3600000; // 1 hour from now
-    const user = {
-      googleId: profile.id,
-      email: profile.emails?.[0]?.value,
-      name: profile.displayName,
-      tokens: {
-        access_token: accessToken,
-        refresh_token: refreshToken,
-        expires_at: expiryDate
-      }
-    };
+  // passport.use(new GoogleStrategy({
+  //   clientID: config.googleClientId,
+  //   clientSecret: config.googleClientSecret,
+  //   callbackURL: config.googleRedirectUri,
+  //   scope: ['profile', 'email', 'https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/calendar.events']
+  // }, (accessToken, refreshToken, profile, done) => {
+  //   // Store tokens for later use
+  //   const expiryDate = new Date().getTime() + 3600000; // 1 hour from now
+  //   const user = {
+  //     googleId: profile.id,
+  //     email: profile.emails?.[0]?.value,
+  //     name: profile.displayName,
+  //     tokens: {
+  //       access_token: accessToken,
+  //       refresh_token: refreshToken,
+  //       expires_at: expiryDate
+  //     }
+  //   };
     
-    return done(null, user);
-  }));
+  //   return done(null, user);
+  // }));
   // Google Auth API endpoints
   // Google OAuth routes for authorization
   app.get("/api/auth/google", 
@@ -91,6 +93,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/google/status", (req: Request, res: Response) => {
+    // Check if the user is authenticated with Google
+    const authenticated = req.isAuthenticated();
+    res.json({ authenticated, user: req.user });
+  });
+  
+  // Add an alias endpoint for calendar-api.ts compatibility
+  app.get("/api/calendar/status", (req: Request, res: Response) => {
     // Check if the user is authenticated with Google
     const authenticated = req.isAuthenticated();
     res.json({ authenticated, user: req.user });
@@ -446,7 +455,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Recommendations API endpoint
   app.get("/api/recommendations", async (req: Request, res: Response) => {
     try {
-      const recommendations = await storage.getRecommendations();
+      // Get location query parameter if provided
+      const location = req.query.location as string | undefined;
+      
+      // Get the latest preferences if no location is specified
+      let targetLocation = location;
+      if (!targetLocation) {
+        const preferences = await storage.getLatestPreferences();
+        if (preferences) {
+          targetLocation = preferences.location;
+        }
+      }
+      
+      // Get recommendations filtered by location
+      const recommendations = await storage.getRecommendations(targetLocation);
+      
+      // Log the number of recommendations for debugging
+      console.log(`Returning ${recommendations.length} recommendations${targetLocation ? ` for location: ${targetLocation}` : ''}`);
+      
       res.json(recommendations);
     } catch (error) {
       console.error("Error getting recommendations:", error);
@@ -467,46 +493,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Received request for places in", location, "with interests:", interests);
       
-      // Try to call FastAPI backend
+      // Use our local API implementation
       try {
-        console.log("Calling FastAPI for place recommendations...");
-        const fastApiResponse = await callFastApi('places-by-interests', 'POST', { 
-          location, 
-          interests 
-        });
+        console.log("Generating place recommendations...");
+        // Create a mock request/response object for our local function
+        const mockReq = { body: { location, interests } } as Request;
+        const mockRes = {
+          json: (data: any) => data,
+          status: () => ({ json: (data: any) => data })
+        } as unknown as Response;
         
-        if (fastApiResponse && fastApiResponse.recommendations && Array.isArray(fastApiResponse.recommendations)) {
-          console.log("Successfully received recommendations from FastAPI");
-          
-          // Store the recommendations from FastAPI
-          const storedRecommendations = [];
-          for (const rec of fastApiResponse.recommendations) {
-            try {
-              const storedRec = await storage.createRecommendation({
-                name: rec.title,
-                description: rec.description,
-                location: rec.location || rec.title,
-                distance: rec.location || "City Center",
-                type: rec.category,
-                day: 1,
-                timeOfDay: ["morning", "afternoon", "evening"][Math.floor(Math.random() * 3)],
-                rating: rec.rating ? rec.rating.toString() : "4.5",
-                reviewCount: 500 + Math.floor(Math.random() * 500),
-                openingHours: "9:00 AM - 5:00 PM",
-                userId: 1, // Default user ID
-                preferenceId: 1 // Use the latest preference ID
-              });
-              
-              storedRecommendations.push(storedRec);
-            } catch (err) {
-              console.error("Error storing FastAPI recommendation:", err);
-            }
-          }
-          
-          if (storedRecommendations.length > 0) {
-            return res.json(storedRecommendations);
-          }
-        }
+        // Since our getPlacesByInterests function now expects req and res objects,
+        // we should handle it differently
+        
+        // For now, let's just skip this step and use our fallback
+        // implementation directly, as it's more reliable
+        console.log("Skipping intermediate API call, using direct implementation");
+        
+        // Since we're skipping the API call, just move on to our fallback implementation
       } catch (fastApiError) {
         console.error("FastAPI error:", fastApiError);
         // Continue with fallback implementation if FastAPI call fails
@@ -787,30 +791,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Destination is required" });
       }
       
-      // Try to call FastAPI backend first
-      try {
-        console.log("Calling FastAPI for recommendations...");
-        const fastApiResult = await callFastApi('api/recommendations/generate', 'POST', { 
-          location: destination,
-          travel_style,
-          food_preference,
-          budget,
-          transport_mode,
-          time_preference,
-          activity_intensity,
-          interests,
-          custom_preferences
-        });
-        
-        // If we successfully get recommendations from FastAPI, return them
-        if (fastApiResult && fastApiResult.recommendations && fastApiResult.recommendations.length > 0) {
-          console.log("Successfully received recommendations from FastAPI");
-          return res.json({ recommendations: fastApiResult.recommendations });
-        }
-      } catch (fastApiError) {
-        console.error("Failed to get recommendations from FastAPI:", fastApiError);
-        // Continue with the fallback implementation if FastAPI call fails
-      }
+      // Use our local implementation directly
+      console.log("Generating recommendations for", destination);
+      
+      // Skip the FastAPI call entirely and just use our local implementation
       
       // Fallback: Generate recommendations based on the specific destination
       const destinationLower = destination.toLowerCase();
@@ -1147,34 +1131,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Set explicit content type to ensure JSON response
       res.setHeader('Content-Type', 'application/json');
       
-      // Try to call FastAPI backend first for real itinerary data
-      try {
-        console.log("Calling FastAPI for itinerary data...");
-        const fastApiResult = await callFastApi('api/itinerary', 'POST', { 
-          location,
-          travel_style,
-          food_preference,
-          budget,
-          transport_mode,
-          time_preference,
-          activity_intensity,
-          interests,
-          custom_preferences,
-          date_from,
-          date_to
-        });
-        
-        if (fastApiResult && Array.isArray(fastApiResult)) {
-          return res.json(fastApiResult);
-        }
-        
-        if (fastApiResult && fastApiResult.itinerary && Array.isArray(fastApiResult.itinerary)) {
-          return res.json(fastApiResult.itinerary);
-        }
-      } catch (fastApiError) {
-        console.error("FastAPI error when fetching itinerary:", fastApiError);
-        // Continue with fallback implementation if FastAPI call fails
-      }
+      // Use our local implementation directly
+      console.log("Generating itinerary data for", location);
+      
+      // Skip the FastAPI call entirely and use local implementation
       
       // Fallback: Generate a sample itinerary
       console.log("Using fallback itinerary data for", location);
@@ -1244,6 +1204,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
-
+  
+  // Start the FastAPI server
+  // FastAPI server is no longer used
+  
+  // Use the itinerary service functions to handle travel requests
+  
+  // Direct travel API endpoints - no more proxy to FastAPI
+  // app.post('/travel/request', async (req: Request, res: Response) => {
+  //   try {
+  //     console.log('[DEBUG] Received travel request:', JSON.stringify(req.body, null, 2).substring(0, 200) + '...');
+  //     const result = await submitTravelRequest(req.body);
+  //     console.log('[DEBUG] Travel request submitted, result:', result);
+  //     res.json(result);
+  //   } catch (error: any) {
+  //     console.error('Error submitting travel request:', error);
+  //     res.status(500).json({
+  //       error: 'Failed to submit travel request',
+  //       details: error.message
+  //     });
+  //   }
+  // });
+  
+  // app.get('/travel/status/:requestId', (req: Request, res: Response) => {
+  //   try {
+  //     const { requestId } = req.params;
+  //     console.log(`[DEBUG] Checking status for request: ${requestId}`);
+  //     const status = getTravelRequestStatus(requestId);
+  //     console.log(`[DEBUG] Status for request ${requestId}:`, status);
+  //     res.json(status);
+  //   } catch (error: any) {
+  //     console.error('Error getting travel request status:', error);
+  //     res.status(500).json({
+  //       error: 'Failed to get travel request status',
+  //       details: error.message
+  //     });
+  //   }
+  // });
+  
+  // app.get('/travel/result/:requestId', (req: Request, res: Response) => {
+  //   try {
+  //     const { requestId } = req.params;
+  //     console.log(`[DEBUG] Getting results for request: ${requestId}`);
+  //     const result = getTravelResult(requestId);
+  //     console.log(`[DEBUG] Got ${result.length} results for request ${requestId}`);
+  //     res.json(result);
+  //   } catch (error: any) {
+  //     console.error('Error getting travel result:', error);
+  //     res.status(500).json({
+  //       error: 'Failed to get travel result',
+  //       details: error.message
+  //     });
+  //   }
+  // });
+  
   return httpServer;
 }

@@ -99,6 +99,8 @@ export class MemStorage implements IStorage {
       id,
       userId: 1, // Default user ID for now
       createdAt: new Date(),
+      // Ensure custom_preferences is never undefined
+      custom_preferences: prefs.custom_preferences ?? null
     };
     
     this.preferences.set(id, preferences);
@@ -107,16 +109,21 @@ export class MemStorage implements IStorage {
   
   async getLatestPreferences(): Promise<Preference | undefined> {
     if (this.preferences.size === 0) {
-      // Return default preferences for testing
+      // Return default preferences for testing with proper type for interests
       return {
         id: 0,
         userId: 1,
-        startDate: "2023-05-15",
-        endDate: "2023-05-22",
-        destination: "Barcelona, Spain",
-        interests: "Architecture, Food, Culture",
-        locationTypes: ["restaurants", "cafes", "attractions", "events"],
-        timePreferences: ["morning", "afternoon", "evening"],
+        date_from: "2023-05-15",
+        date_to: "2023-05-22",
+        location: "Barcelona, Spain",
+        travel_style: "relaxed",
+        food_preference: "local",
+        budget: "medium",
+        transport_mode: "walking",
+        time_preference: "balanced",
+        activity_intensity: "moderate",
+        interests: ["Architecture", "Food", "Culture"],
+        custom_preferences: null,
         createdAt: new Date(),
       };
     }
@@ -127,16 +134,78 @@ export class MemStorage implements IStorage {
   }
   
   // Recommendations methods
-  async getRecommendations(): Promise<Recommendation[]> {
+  async getRecommendations(location?: string): Promise<Recommendation[]> {
+    // If location is provided, filter recommendations by location
+    if (location) {
+      return Array.from(this.recommendations.values())
+        .filter(rec => {
+          // Try to match by destination in metadata or by name
+          const metadata = rec.metadata as Record<string, any> || {};
+          const destination = metadata.destination?.toLowerCase();
+          
+          const matchesLocation = 
+            (destination === location.toLowerCase()) ||
+            (rec.name?.toLowerCase().includes(location.toLowerCase()));
+          
+          return matchesLocation;
+        });
+    }
+    
+    // Otherwise, try to get the latest preference and filter by its location
+    try {
+      const latestPreference = await this.getLatestPreferences();
+      if (latestPreference && latestPreference.location) {
+        const locationLower = latestPreference.location.toLowerCase();
+        // Match any recommendation that has this location or includes the name
+        return Array.from(this.recommendations.values())
+          .filter(rec => {
+            const metadata = rec.metadata as Record<string, any> || {};
+            const destination = metadata.destination?.toLowerCase();
+            
+            const matchesLocation = 
+              (destination === locationLower) ||
+              (rec.name?.toLowerCase().includes(locationLower.split(',')[0].toLowerCase()));
+            
+            return matchesLocation;
+          });
+      }
+    } catch (error) {
+      console.error("Error filtering recommendations by latest preference:", error);
+    }
+    
+    // If no filtering was possible, return all recommendations
     return Array.from(this.recommendations.values());
   }
   
   async createRecommendation(recommendation: InsertRecommendation): Promise<Recommendation> {
     const id = this.currentRecommendationId++;
+    
+    // Ensure metadata exists as a proper object
+    const metadata = recommendation.metadata as Record<string, any> || {};
+    const newMetadata = { ...metadata };
+    
+    // Store destination in metadata for filtering
+    const latestPreference = await this.getLatestPreferences();
+    if (latestPreference) {
+      newMetadata.destination = latestPreference.location;
+    }
+    
+    // Create the recommendation with proper type handling
     const newRecommendation: Recommendation = {
-      ...recommendation,
       id,
-      userId: 1, // Default user ID for now
+      name: recommendation.name,
+      type: recommendation.type,
+      userId: 1, // Default user ID
+      preferenceId: recommendation.preferenceId || null,
+      day: recommendation.day,
+      timeOfDay: recommendation.timeOfDay,
+      rating: recommendation.rating,
+      reviewCount: recommendation.reviewCount,
+      distance: recommendation.distance,
+      location: recommendation.location || null,
+      openingHours: recommendation.openingHours,
+      description: recommendation.description,
+      metadata: newMetadata,
       createdAt: new Date(),
     };
     
@@ -190,7 +259,9 @@ export class MemStorage implements IStorage {
   
   // Initialize sample data
   private initSampleData() {
-    // Sample recommendations
+    // Sample recommendations for Barcelona
+    const defaultDestination = "Barcelona, Spain";
+    
     const sampleRecommendations: Partial<Recommendation>[] = [
       {
         id: this.currentRecommendationId++,
@@ -205,7 +276,7 @@ export class MemStorage implements IStorage {
         distance: "1.2 km from your hotel",
         openingHours: "Open 7:00 AM - 8:00 PM",
         description: "A charming café with excellent pastries and traditional Spanish coffee. Perfect for a relaxed morning.",
-        metadata: {},
+        metadata: { destination: defaultDestination },
         createdAt: new Date(),
       },
       {
@@ -221,7 +292,7 @@ export class MemStorage implements IStorage {
         distance: "3.5 km from previous location",
         openingHours: "Tours available 10:00 AM - 5:00 PM",
         description: "Antoni Gaudí's unfinished masterpiece. We recommend the guided tour to understand its unique architecture.",
-        metadata: {},
+        metadata: { destination: defaultDestination },
         createdAt: new Date(),
       },
       {
@@ -237,7 +308,7 @@ export class MemStorage implements IStorage {
         distance: "1.8 km from previous location",
         openingHours: "Open 6:00 PM - 11:30 PM",
         description: "Authentic Spanish tapas in a cozy setting. Popular with locals and highly rated for their patatas bravas.",
-        metadata: {},
+        metadata: { destination: defaultDestination },
         createdAt: new Date(),
       },
       {
@@ -253,7 +324,7 @@ export class MemStorage implements IStorage {
         distance: "4.0 km from your hotel",
         openingHours: "Open 8:00 AM - 6:30 PM",
         description: "Another Gaudí masterpiece with beautiful mosaics and panoramic views of the city. Arrive early to avoid crowds.",
-        metadata: {},
+        metadata: { destination: defaultDestination },
         createdAt: new Date(),
       },
       {
@@ -269,7 +340,7 @@ export class MemStorage implements IStorage {
         distance: "3.2 km from previous location",
         openingHours: "Shops open 10:00 AM - 9:00 PM",
         description: "Famous pedestrian street with shops, restaurants and street performers. Don't miss La Boqueria market nearby.",
-        metadata: {},
+        metadata: { destination: defaultDestination },
         createdAt: new Date(),
       },
       {
@@ -285,7 +356,76 @@ export class MemStorage implements IStorage {
         distance: "1.5 km from previous location",
         openingHours: "Shows at 7:00 PM and 9:00 PM",
         description: "Traditional Spanish dance performance with dinner option available. Booking in advance is recommended.",
-        metadata: {},
+        metadata: { destination: defaultDestination },
+        createdAt: new Date(),
+      },
+      
+      // Add a few sample recommendations for other popular destinations
+      // New York
+      {
+        id: this.currentRecommendationId++,
+        userId: 1,
+        preferenceId: 2,
+        name: "Empire State Building",
+        type: "Attraction",
+        day: 1,
+        timeOfDay: "morning",
+        rating: "4.7",
+        reviewCount: 3000,
+        distance: "1.5 km from your hotel",
+        openingHours: "Open 8:00 AM - 2:00 AM",
+        description: "Iconic skyscraper with observation decks offering panoramic city views. Best to visit early to avoid crowds.",
+        metadata: { destination: "New York, USA" },
+        createdAt: new Date(),
+      },
+      {
+        id: this.currentRecommendationId++,
+        userId: 1,
+        preferenceId: 2,
+        name: "Central Park",
+        type: "Outdoor",
+        day: 1,
+        timeOfDay: "afternoon",
+        rating: "4.9",
+        reviewCount: 5000,
+        distance: "2.0 km from previous location",
+        openingHours: "Open 6:00 AM - 1:00 AM",
+        description: "Vast urban park with walking paths, lakes, a zoo, and much more. Perfect for a relaxing afternoon.",
+        metadata: { destination: "New York, USA" },
+        createdAt: new Date(),
+      },
+      
+      // Paris
+      {
+        id: this.currentRecommendationId++,
+        userId: 1,
+        preferenceId: 3,
+        name: "Eiffel Tower",
+        type: "Attraction",
+        day: 1,
+        timeOfDay: "afternoon",
+        rating: "4.8",
+        reviewCount: 4500,
+        distance: "3.0 km from your hotel",
+        openingHours: "Open 9:00 AM - 12:45 AM",
+        description: "Paris's iconic landmark offering breathtaking views of the city. Consider visiting at sunset.",
+        metadata: { destination: "Paris, France" },
+        createdAt: new Date(),
+      },
+      {
+        id: this.currentRecommendationId++,
+        userId: 1,
+        preferenceId: 3,
+        name: "Louvre Museum",
+        type: "Museum",
+        day: 2,
+        timeOfDay: "morning",
+        rating: "4.9",
+        reviewCount: 4000,
+        distance: "2.5 km from your hotel",
+        openingHours: "Open 9:00 AM - 6:00 PM, Closed Tuesdays",
+        description: "World-famous art museum home to thousands of works, including the Mona Lisa. Plan to spend at least half a day.",
+        metadata: { destination: "Paris, France" },
         createdAt: new Date(),
       },
     ];

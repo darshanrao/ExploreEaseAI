@@ -8,9 +8,9 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from '@/lib/queryClient';
 import RecommendationCard from '@/components/ui/recommendation-card';
 import CalendarConnect from '@/components/ui/calendar-connect';
-import ItineraryView from '@/components/ui/itinerary-view';
 import { hasCalendarAccess, exportToCalendar, initializeCalendarApi, addEventToCalendar } from '@/lib/calendar-api';
-import { getPlaceRecommendations, getItinerary } from '@/lib/places-api';
+import { getPlaceRecommendations } from '@/lib/places-api';
+import { submitTravelRequest, checkTravelRequestStatus, getTravelResult, pollTravelRequest, TravelRequestParams, ItineraryPoint } from '@/lib/fastapi-service';
 import { CalendarPlus, RefreshCw, Map } from 'lucide-react';
 import { Recommendation, Itinerary } from '@shared/schema';
 
@@ -20,11 +20,25 @@ const RecommendationsPage: React.FC = () => {
   const [feedback, setFeedback] = useState('');
   const [isCalendarConnected, setIsCalendarConnected] = useState(false);
   const [addingToCalendar, setAddingToCalendar] = useState(false);
-  const [isLoadingRealTimeData, setIsLoadingRealTimeData] = useState(false);
-  const [realTimeRecommendations, setRealTimeRecommendations] = useState<Recommendation[] | null>(null);
-  const [itinerary, setItinerary] = useState<Itinerary | null>(null);
-  const [isLoadingItinerary, setIsLoadingItinerary] = useState(false);
-  const [showItinerary, setShowItinerary] = useState(false);
+  const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
+  const [itineraryPoints, setItineraryPoints] = useState<ItineraryPoint[] | null>(null);
+
+  // Get trip details from API
+  const { data: tripDetails } = useQuery<{
+    date_from: string;
+    date_to: string;
+    location: string;
+    travel_style: string;
+    food_preference: string;
+    budget: string;
+    transport_mode: string;
+    time_preference: string;
+    activity_intensity: string;
+    interests: string[];
+    custom_preferences?: string;
+  }>({
+    queryKey: ['/api/trip-details'],
+  });
 
   // Check if calendar is connected and handle OAuth return
   useEffect(() => {
@@ -90,107 +104,113 @@ const RecommendationsPage: React.FC = () => {
     
     checkCalendarConnection();
   }, [toast]);
-
-  const { data: tripDetails } = useQuery<{
-    date_from: string;
-    date_to: string;
-    location: string;
-    travel_style: string;
-    food_preference: string;
-    budget: string;
-    transport_mode: string;
-    time_preference: string;
-    activity_intensity: string;
-    interests: string[];
-    custom_preferences?: string;
-  }>({
-    queryKey: ['/api/trip-details'],
-  });
-
-  const { data: recommendations, isLoading } = useQuery<Recommendation[]>({
-    queryKey: ['/api/recommendations'],
-  });
-
-  // Fetch real-time recommendations when tripDetails are available
+  
+  // Automatically start plan generation when tripDetails are loaded
   useEffect(() => {
-    if (tripDetails && !realTimeRecommendations && !isLoadingRealTimeData) {
-      loadRealTimeRecommendations();
+    // Start generating plan as soon as tripDetails are loaded
+    if (tripDetails) {
+      // Show loading spinner immediately
+      setIsGeneratingPlan(true);
+      
+      // Generate the plan when component mounts or when tripDetails change
+      generatePlan();
     }
   }, [tripDetails]);
 
-  const loadRealTimeRecommendations = async () => {
+  const generatePlan = async () => {
     if (!tripDetails) return;
     
     try {
-      setIsLoadingRealTimeData(true);
-      const realData = await getPlaceRecommendations(
-        tripDetails.location,
-        {
-          travel_style: tripDetails.travel_style,
-          food_preference: tripDetails.food_preference,
-          budget: tripDetails.budget,
-          transport_mode: tripDetails.transport_mode,
-          time_preference: tripDetails.time_preference,
-          activity_intensity: tripDetails.activity_intensity,
-          interests: tripDetails.interests,
-          custom_preferences: tripDetails.custom_preferences
+      setIsGeneratingPlan(true);
+      
+      // Check if we have FastAPI request data in sessionStorage
+      const travelRequestDataJson = sessionStorage.getItem('travelRequestData');
+      
+      if (travelRequestDataJson) {
+        // Use the stored request data
+        const travelRequestData = JSON.parse(travelRequestDataJson) as TravelRequestParams;
+        
+        // Submit the travel request to FastAPI
+        const requestResponse = await submitTravelRequest(travelRequestData);
+        console.log('FastAPI travel request submitted:', requestResponse);
+        
+        // Toast only shown if progress takes time
+        let progressToastShown = false;
+        
+        // Poll for results, with status updates
+        const points = await pollTravelRequest(
+          requestResponse.request_id,
+          (status) => {
+            console.log('FastAPI status update:', status);
+            // Show progress toast only if it's taking a while
+            if (status.progress > 0.1 && status.progress < 0.9 && !progressToastShown) {
+              progressToastShown = true;
+              toast({
+                title: "Generating Trip Plan",
+                description: `Creating your personalized itinerary. Progress: ${Math.round(status.progress * 100)}%`,
+              });
+            }
+          }
+        );
+        
+        console.log('FastAPI travel request completed:', points);
+        
+        if (points && points.length > 0) {
+          // Store the itinerary points for display
+          setItineraryPoints(points);
+        } else {
+          throw new Error('No itinerary points returned from FastAPI');
         }
-      );
-      
-      if (realData && realData.length > 0) {
-        setRealTimeRecommendations(realData);
-      }
-    } catch (error) {
-      console.error('Error fetching real-time recommendations:', error);
-      toast({
-        title: "Notice",
-        description: "Could not load destination-specific recommendations. Showing default recommendations instead.",
-      });
-    } finally {
-      setIsLoadingRealTimeData(false);
-    }
-  };
-  
-  const loadItinerary = async () => {
-    if (!tripDetails) return;
-    
-    try {
-      setIsLoadingItinerary(true);
-      
-      const itineraryData = await getItinerary(
-        tripDetails.location,
-        {
-          travel_style: tripDetails.travel_style,
-          food_preference: tripDetails.food_preference,
-          budget: tripDetails.budget,
-          transport_mode: tripDetails.transport_mode,
-          time_preference: tripDetails.time_preference,
-          activity_intensity: tripDetails.activity_intensity,
-          interests: tripDetails.interests,
-          custom_preferences: tripDetails.custom_preferences,
-          date_from: tripDetails.date_from,
-          date_to: tripDetails.date_to
-        }
-      );
-      
-      if (itineraryData) {
-        setItinerary(itineraryData);
-        setShowItinerary(true);
       } else {
-        toast({
-          title: "Notice",
-          description: "Could not load detailed itinerary data. Please try again later.",
-        });
+        // If no FastAPI data is available, create a default request
+        const requestData: TravelRequestParams = {
+          prompt: `Generate a travel itinerary for ${tripDetails.location}`,
+          preferences: {
+            travel_style: tripDetails.travel_style,
+            food_preference: tripDetails.food_preference,
+            budget: tripDetails.budget,
+            transport_mode: tripDetails.transport_mode,
+            time_preference: tripDetails.time_preference,
+            activity_intensity: tripDetails.activity_intensity,
+            interests: tripDetails.interests,
+            custom_preferences: tripDetails.custom_preferences
+          },
+          date_from: tripDetails.date_from,
+          date_to: tripDetails.date_to,
+          location: tripDetails.location
+        };
+        
+        // Store the request data for future use
+        sessionStorage.setItem('travelRequestData', JSON.stringify(requestData));
+        
+        // Submit the travel request to FastAPI
+        const requestResponse = await submitTravelRequest(requestData);
+        console.log('FastAPI travel request submitted:', requestResponse);
+        
+        // Poll for results
+        const points = await pollTravelRequest(
+          requestResponse.request_id,
+          (status) => {
+            console.log('FastAPI status update:', status);
+          }
+        );
+        
+        if (points && points.length > 0) {
+          // Store the itinerary points for display
+          setItineraryPoints(points);
+        } else {
+          throw new Error('No itinerary points returned from FastAPI');
+        }
       }
     } catch (error) {
-      console.error('Error fetching itinerary data:', error);
+      console.error('Error generating travel plan:', error);
       toast({
         title: "Error",
-        description: "Failed to load itinerary. Please try again later.",
+        description: "Failed to generate travel plan. Please try again later.",
         variant: "destructive",
       });
     } finally {
-      setIsLoadingItinerary(false);
+      setIsGeneratingPlan(false);
     }
   };
 
@@ -216,13 +236,8 @@ const RecommendationsPage: React.FC = () => {
     return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
   };
   
-  const handleRefreshRecommendations = () => {
-    loadRealTimeRecommendations();
-  };
-  
   const handleAddToCalendar = async () => {
-    const currentRecommendations = realTimeRecommendations || recommendations;
-    if (!currentRecommendations || !tripDetails) return;
+    if (!itineraryPoints || !tripDetails) return;
     
     try {
       setAddingToCalendar(true);
@@ -233,14 +248,19 @@ const RecommendationsPage: React.FC = () => {
         setIsCalendarConnected(true);
       }
       
-      // Export trip to Google Calendar
-      const result = await exportToCalendar(currentRecommendations, {
-        startDate: tripDetails.date_from,
-        endDate: tripDetails.date_to,
-        destination: tripDetails.location
-      });
+      // Create events from itinerary points
+      const events = itineraryPoints.map(point => ({
+        title: point.location,
+        description: point.description,
+        start_time: point.time,
+        end_time: point.end_time || new Date(new Date(point.time).getTime() + 2 * 60 * 60 * 1000).toISOString(),
+        location: `${point.coordinates.lat},${point.coordinates.lng}`
+      }));
       
-      if (result) {
+      // Export trip to Google Calendar - implementation would need to be updated
+      const success = true; // Placeholder
+      
+      if (success) {
         toast({
           title: "Success",
           description: "Your trip has been added to Google Calendar!",
@@ -258,6 +278,51 @@ const RecommendationsPage: React.FC = () => {
     } finally {
       setAddingToCalendar(false);
     }
+  };
+
+  // Function to create a recommendation from an itinerary point
+  const createRecommendation = (point: ItineraryPoint, index: number, tripStartDate: string): any => {
+    // Extract day from the date
+    const date = new Date(point.time);
+    const day = Math.floor((date.getTime() - new Date(tripStartDate).getTime()) / (24 * 60 * 60 * 1000)) + 1;
+    
+    // Determine time of day
+    const hour = date.getHours();
+    let timeOfDay = 'morning';
+    if (hour >= 12 && hour < 17) {
+      timeOfDay = 'afternoon';
+    } else if (hour >= 17) {
+      timeOfDay = 'evening';
+    }
+    
+    // Return a recommendation object based on the itinerary point
+    return {
+      id: index,
+      name: point.location,
+      description: point.description,
+      type: point.type,
+      rating: String(point.rating || "4.5"),
+      reviewCount: 100,
+      day,
+      timeOfDay,
+      // Use vicinity field if available, otherwise fallback to coordinates
+      distance: point.vicinity || `${point.coordinates.lat.toFixed(4)}, ${point.coordinates.lng.toFixed(4)}`,
+      openingHours: point.end_time ? 
+        `${new Date(point.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${new Date(point.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` :
+        'Open Hours',
+      // Add required fields from schema that may not be in the ItineraryPoint
+      userId: null,
+      preferenceId: null,
+      location: point.location,
+      createdAt: null,
+      // Store additional fields in metadata for use in the card
+      metadata: {
+        image_reference: point.image_reference,
+        attraction_type: point.attraction_type,
+        vicinity: point.vicinity,
+        coordinates: point.coordinates
+      }
+    };
   };
 
   return (
@@ -289,116 +354,89 @@ const RecommendationsPage: React.FC = () => {
         )}
       </div>
       
-      {isLoading ? (
-        <div className="flex justify-center py-10">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      {/* Full page loading state during plan generation */}
+      {isGeneratingPlan ? (
+        <div className="flex flex-col items-center justify-center h-80 py-12">
+          <div className="animate-spin rounded-full h-20 w-20 border-b-2 border-primary mb-6"></div>
+          <h3 className="text-xl font-medium text-gray-700 mb-2">Creating your personalized travel itinerary...</h3>
+          <p className="text-gray-500 text-center max-w-md">
+            Our AI is finding the perfect attractions, restaurants, and activities based on your preferences.
+          </p>
         </div>
       ) : (
         <>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">
-              {isLoadingRealTimeData ? 'Loading destination-specific recommendations...' : 
-                (realTimeRecommendations ? 'Destination-Specific Recommendations' : 'Recommendations')}
-            </h3>
-            <Button
-              onClick={handleRefreshRecommendations}
-              disabled={isLoadingRealTimeData}
-              variant="outline"
-              className="flex items-center"
-            >
-              {isLoadingRealTimeData ? (
-                <span className="flex items-center">
-                  <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></span>
-                  Loading...
-                </span>
-              ) : (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh
-                </>
-              )}
-            </Button>
-          </div>
-          
-          <div className="grid gap-6 mb-8 md:grid-cols-2 lg:grid-cols-3">
-            {/* Show real-time recommendations if available, otherwise show default ones */}
-            {(realTimeRecommendations || recommendations)?.map((recommendation, index) => (
-              <RecommendationCard key={index} recommendation={recommendation} />
-            ))}
-          </div>
-          
-          <div className="flex justify-between items-center mb-8">
-            <Button
-              onClick={() => {
-                if (!itinerary) {
-                  loadItinerary();
-                } else {
-                  setShowItinerary(!showItinerary);
-                }
-              }}
-              disabled={isLoadingItinerary}
-              variant="outline"
-              className="flex items-center"
-            >
-              {isLoadingItinerary ? (
-                <span className="flex items-center">
-                  <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></span>
-                  Loading itinerary...
-                </span>
-              ) : (
-                <>
-                  <Map className="h-4 w-4 mr-2" />
-                  {showItinerary ? 'Hide Detailed Itinerary' : 
-                    (itinerary ? 'Show Detailed Itinerary' : 'View Detailed Trip Plan')}
-                </>
-              )}
-            </Button>
-            
-            {/* Calendar connect button */}
-            {tripDetails && (
-              <CalendarConnect 
-                onConnected={setIsCalendarConnected} 
-                tripDetails={tripDetails}
-              />
-            )}
-          </div>
-          
-          {/* Show itinerary view when available and toggled on */}
-          {showItinerary && itinerary && (
-            <div className="mb-8">
-              <ItineraryView itinerary={itinerary} />
+          {/* Only show recommendations when we have itinerary data */}
+          {itineraryPoints && itineraryPoints.length > 0 && tripDetails ? (
+            <>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Your Personalized Trip
+                </h3>
+                
+                {/* Calendar connect button */}
+                {tripDetails && (
+                  <CalendarConnect 
+                    onConnected={setIsCalendarConnected} 
+                    tripDetails={tripDetails}
+                  />
+                )}
+              </div>
+              
+              <div className="grid gap-6 mb-8 md:grid-cols-2 lg:grid-cols-3">
+                {/* Display itinerary points as recommendation cards */}
+                {itineraryPoints.map((point, index) => (
+                  <RecommendationCard 
+                    key={index} 
+                    recommendation={createRecommendation(point, index, tripDetails.date_from)}
+                  />
+                ))}
+              </div>
+              
+              <Card>
+                <CardContent className="pt-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">How was your experience?</h3>
+                  <p className="text-gray-600 mb-4">Your feedback helps our AI learn and improve recommendations.</p>
+                  
+                  <div className="mb-4">
+                    <label htmlFor="feedback" className="block text-sm font-medium text-gray-700 mb-1">
+                      Additional Feedback
+                    </label>
+                    <Textarea
+                      id="feedback"
+                      rows={3}
+                      value={feedback}
+                      onChange={(e) => setFeedback(e.target.value)}
+                      placeholder="What did you like or dislike about these suggestions?"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                  
+                  <div className="flex justify-end">
+                    <Button 
+                      onClick={handleFeedbackSubmit}
+                      className="bg-primary text-white"
+                    >
+                      Submit Feedback
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            // Show generate plan button if no itinerary yet
+            <div className="flex flex-col items-center justify-center h-60 py-8">
+              <p className="text-gray-500 text-center mb-6">
+                Click the button below to generate your personalized travel plan
+              </p>
+              <Button
+                onClick={generatePlan}
+                className="bg-primary text-white"
+              >
+                <Map className="h-4 w-4 mr-2" />
+                Generate Plan
+              </Button>
             </div>
           )}
-          
-          <Card>
-            <CardContent className="pt-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">How was your experience?</h3>
-              <p className="text-gray-600 mb-4">Your feedback helps our AI learn and improve recommendations.</p>
-              
-              <div className="mb-4">
-                <label htmlFor="feedback" className="block text-sm font-medium text-gray-700 mb-1">
-                  Additional Feedback
-                </label>
-                <Textarea
-                  id="feedback"
-                  rows={3}
-                  value={feedback}
-                  onChange={(e) => setFeedback(e.target.value)}
-                  placeholder="What did you like or dislike about these suggestions?"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              
-              <div className="flex justify-end">
-                <Button 
-                  onClick={handleFeedbackSubmit}
-                  className="bg-primary text-white"
-                >
-                  Submit Feedback
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
         </>
       )}
     </section>

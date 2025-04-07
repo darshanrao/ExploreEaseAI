@@ -31,6 +31,17 @@ export const preferences = pgTable("preferences", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Define the metadata structure for recommendations
+export type RecommendationMetadata = {
+  image_reference?: string;
+  attraction_type?: string;
+  vicinity?: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+};
+
 // Recommendations table
 export const recommendations = pgTable("recommendations", {
   id: serial("id").primaryKey(),
@@ -46,7 +57,7 @@ export const recommendations = pgTable("recommendations", {
   location: text("location"),
   openingHours: text("opening_hours").notNull(),
   description: text("description").notNull(),
-  metadata: json("metadata"),
+  metadata: json("metadata").$type<RecommendationMetadata>(), // Specify the type for metadata
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -129,7 +140,7 @@ export type GoogleToken = {
 
 // New types for itinerary data from backend agent
 export type ItineraryPoint = {
-  type: "start" | "attraction";
+  type: string; // Accept any type string (start, attraction, food, etc.)
   time: string;
   end_time?: string;
   location: string;
@@ -139,6 +150,11 @@ export type ItineraryPoint = {
   };
   description: string;
   rating?: number;
+  
+  // Additional fields for enhanced display
+  attraction_type?: string;      // Type of attraction (restaurant, museum, etc.)
+  vicinity?: string;            // Human-readable address/vicinity
+  image_reference?: string;     // Reference to an image
 };
 
 export type Itinerary = ItineraryPoint[];

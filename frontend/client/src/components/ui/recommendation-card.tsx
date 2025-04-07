@@ -117,27 +117,55 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({ recommendation 
     }
   };
 
+  // Get image reference from metadata if available
+  const imageReference = recommendation.metadata?.image_reference;
+  const attractionType = recommendation.metadata?.attraction_type || recommendation.type;
+  const vicinity = recommendation.metadata?.vicinity || recommendation.distance;
+  
   return (
-    <Card className="overflow-hidden">
-      <div className="p-4 border-b border-gray-100">
+    <Card className="overflow-hidden flex flex-col h-full">
+      {/* Image section - only show if image reference is available */}
+      {imageReference && (
+        <div className="h-40 overflow-hidden relative">
+          <div 
+            className="absolute inset-0 bg-cover bg-center" 
+            style={{ 
+              // For a real app, we'd use a proper image URL, but for this demo we'll use a placeholder
+              backgroundImage: `url(https://via.placeholder.com/400x200/e0f2fe/2563eb?text=${encodeURIComponent(recommendation.name)})`,
+              backgroundSize: 'cover'
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+          <div className="absolute bottom-2 left-3">
+            <Badge className="bg-white/80 text-gray-800 backdrop-blur-sm">
+              {attractionType}
+            </Badge>
+          </div>
+        </div>
+      )}
+      
+      <div className={`p-4 border-b border-gray-100 ${!imageReference ? 'pb-2' : ''}`}>
         <div className="flex justify-between items-center">
           <span className="text-xs font-medium text-gray-500">
             DAY {recommendation.day} • {recommendation.timeOfDay.toUpperCase()}
           </span>
-          <Badge variant="outline" className={`${getTypeColor(recommendation.type)}`}>
-            {recommendation.type}
-          </Badge>
+          {!imageReference && (
+            <Badge variant="outline" className={`${getTypeColor(recommendation.type)}`}>
+              {recommendation.type}
+            </Badge>
+          )}
         </div>
         <h3 className="text-lg font-medium mt-1">{recommendation.name}</h3>
       </div>
-      <div className="p-4">
+      
+      <div className="p-4 flex-grow">
         <div className="flex items-center text-sm text-gray-600 mb-2">
           <i className="fas fa-star text-yellow-400 mr-1"></i>
           <span>{recommendation.rating} ({recommendation.reviewCount}+ reviews)</span>
         </div>
         <div className="flex items-center text-sm text-gray-600 mb-2">
           <i className="fas fa-map-pin mr-2"></i>
-          <span>{recommendation.distance}</span>
+          <span>{vicinity}</span>
         </div>
         <div className="flex items-center text-sm text-gray-600 mb-3">
           <i className="fas fa-clock mr-2"></i>
@@ -168,7 +196,7 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({ recommendation 
           </Button>
         </div>
         
-        <div className="flex justify-between">
+        <div className="flex justify-between mt-auto">
           <Button variant="link" className="text-sm text-primary hover:text-primary/90 p-0">
             View Details
           </Button>

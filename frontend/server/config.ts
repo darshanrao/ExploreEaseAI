@@ -11,7 +11,7 @@ if (process.env.REPL_ID && process.env.REPL_SLUG) {
 }
 
 // FastAPI backend URL
-const fastApiUrl = process.env.FASTAPI_URL || 'http://localhost:8000';
+const fastApiUrl = process.env.FASTAPI_URL || 'http://localhost:3000';
 
 export const config = {
   googleClientId: process.env.GOOGLE_CLIENT_ID || '',

@@ -1,0 +1,16 @@
+{
+  "prompt": "Create a detailed 3-day itinerary for Prague with cultural activities and local cuisine",
+  "preferences": {
+    "travel_style": "cultural",
+    "food_preference": "local cuisine",
+    "budget": "2",
+    "transport_mode": "public transport",
+    "time_preference": "morning",
+    "activity_intensity": "moderate", 
+    "interests": ["Food", "History", "Art", "Architecture"],
+    "custom_preferences": "I prefer walking tours and want to visit historic sites"
+  },
+  "date_from": "2025-04-02T12:00",
+  "date_to": "2025-04-05T19:00",
+  "location": "Prague"
+}
