@@ -1,0 +1,22 @@
+WARNING:  [travel_client]: Endpoint configuration overrides mailbox setting.
+Client agent address: agent1qdadxf4zp2pz84eej7tlpgcvr273ghz78z8v7sqputv54ma4l8dkcmupde0
+Reading travel request from: travel_request.json
+INFO:     [travel_client]: Starting agent with address: agent1qdadxf4zp2pz84eej7tlpgcvr273ghz78z8v7sqputv54ma4l8dkcmupde0
+INFO:     [travel_client]: Loaded travel request from travel_request.json
+INFO:     [travel_client]: Request details: Location: Los Angeles, Dates: 2025-04-15 09:00 to 2025-04-15 22:00
+INFO:     [travel_client]: Sending travel request to Information Agent: agent1qvghn56ppww3cq5fv96m23jgvklev333evj42we6v0s7exszmf4hga3lh0a
+INFO:     [travel_client]: Agent inspector available at https://agentverse.ai/inspect/?uri=http%3A//127.0.0.1%3A8001&address=agent1qdadxf4zp2pz84eej7tlpgcvr273ghz78z8v7sqputv54ma4l8dkcmupde0
+INFO:     [travel_client]: Starting server on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     [uagents.registration]: Registration on Almanac API successful
+INFO:     [uagents.registration]: Almanac contract registration is up to date!
+INFO:     [travel_client]: Received travel plan from Information Agent:
+INFO:     [travel_client]: Free times: [{'start': '2025-04-15 09:00', 'end': '2025-04-15 21:00', 'start_location': 'Los Angeles, California, US', 'end_location': 'City Park Apartments, 1247 W 30th St, Los Angeles, CA 90007, USA'}]
+INFO:     [travel_client]: Attractions: [['Hollywood sign', 'Santa Monica Pier'], 2, 4]
+INFO:     [travel_client]: Events: [['movie studio tour', 'celebrity tour'], 2, 4]
+INFO:     [travel_client]: Lunch: ['California cuisine', 2, 4]
+INFO:     [travel_client]: Dinner: ['California cuisine', 2, 4]
+INFO:     [travel_client]: Forwarding travel plan to Map Agent: agent1qwnu3kxx98yjfrphjztvedgqqsapzql45t9u8uhd3p9zc9j76aph23d42se
+INFO:     [travel_client]: Travel plan sent to Map Agent
+INFO:     [travel_client]: Received final itinerary from Map Agent:
+INFO:     [travel_client]: Itinerary contains 1 items
+INFO:     [travel_client]: Shutting down client after receiving final itinerary

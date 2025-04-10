@@ -1,0 +1,158 @@
+{
+    "itinerary": [
+        {
+            "type": "start",
+            "time": "2025-04-15 09:00",
+            "end_time": "2025-04-15 09:00",
+            "location": "Los Angeles, California, US",
+            "coordinates": {
+                "lat": 34.0549076,
+                "lng": -118.242643
+            },
+            "description": "Start of the itinerary"
+        },
+        {
+            "type": "attraction",
+            "time": "2025-04-15 09:00",
+            "end_time": "2025-04-15 11:00",
+            "location": "Griffith Observatory",
+            "coordinates": {
+                "lat": 34.1183828,
+                "lng": -118.3004246
+            },
+            "description": "Visit Griffith Observatory"
+        },
+        {
+            "type": "travel",
+            "time": "2025-04-15 11:00",
+            "end_time": "2025-04-15 11:07",
+            "location": "",
+            "coordinates": {
+                "lat": 0.0,
+                "lng": 0.0
+            },
+            "description": "Travel from Griffith Observatory to World of Illusions Los Angeles"
+        },
+        {
+            "type": "attraction",
+            "time": "2025-04-15 11:07",
+            "end_time": "2025-04-15 13:07",
+            "location": "World of Illusions Los Angeles",
+            "coordinates": {
+                "lat": 34.1018365,
+                "lng": -118.3403365
+            },
+            "description": "Visit World of Illusions Los Angeles"
+        },
+        {
+            "type": "travel",
+            "time": "2025-04-15 13:07",
+            "end_time": "2025-04-15 13:08",
+            "location": "",
+            "coordinates": {
+                "lat": 0.0,
+                "lng": 0.0
+            },
+            "description": "Travel from World of Illusions Los Angeles to Kendall's Brasserie"
+        },
+        {
+            "type": "lunch",
+            "time": "2025-04-15 13:08",
+            "end_time": "2025-04-15 14:08",
+            "location": "Kendall's Brasserie",
+            "coordinates": {
+                "lat": 34.0570206,
+                "lng": -118.245941
+            },
+            "description": "Have lunch at Kendall's Brasserie"
+        },
+        {
+            "type": "travel",
+            "time": "2025-04-15 14:08",
+            "end_time": "2025-04-15 14:30",
+            "location": "",
+            "coordinates": {
+                "lat": 0.0,
+                "lng": 0.0
+            },
+            "description": "Travel from Kendall's Brasserie to Hollywood Sign"
+        },
+        {
+            "type": "attraction",
+            "time": "2025-04-15 14:30",
+            "end_time": "2025-04-15 16:30",
+            "location": "Hollywood Sign",
+            "coordinates": {
+                "lat": 34.1340573,
+                "lng": -118.3215333
+            },
+            "description": "Visit Hollywood Sign"
+        },
+        {
+            "type": "travel",
+            "time": "2025-04-15 16:30",
+            "end_time": "2025-04-15 16:31",
+            "location": "",
+            "coordinates": {
+                "lat": 0.0,
+                "lng": 0.0
+            },
+            "description": "Travel from Hollywood Sign to Lake Hollywood Park"
+        },
+        {
+            "type": "attraction",
+            "time": "2025-04-15 16:31",
+            "end_time": "2025-04-15 18:31",
+            "location": "Lake Hollywood Park",
+            "coordinates": {
+                "lat": 34.1270732,
+                "lng": -118.3288478
+            },
+            "description": "Visit Lake Hollywood Park"
+        },
+        {
+            "type": "travel",
+            "time": "2025-04-15 18:31",
+            "end_time": "2025-04-15 18:39",
+            "location": "",
+            "coordinates": {
+                "lat": 0.0,
+                "lng": 0.0
+            },
+            "description": "Travel from Lake Hollywood Park to Drago Centro"
+        },
+        {
+            "type": "dinner",
+            "time": "2025-04-15 18:39",
+            "end_time": "2025-04-15 20:09",
+            "location": "Drago Centro",
+            "coordinates": {
+                "lat": 34.0518808,
+                "lng": -118.2569353
+            },
+            "description": "Have dinner at Drago Centro"
+        },
+        {
+            "type": "travel",
+            "time": "2025-04-15 20:09",
+            "end_time": "2025-04-15 20:17",
+            "location": "",
+            "coordinates": {
+                "lat": 0.0,
+                "lng": 0.0
+            },
+            "description": "Travel from Drago Centro to City Park Apartments"
+        },
+        {
+            "type": "end",
+            "time": "2025-04-15 20:17",
+            "end_time": "2025-04-15 21:00",
+            "location": "City Park Apartments, 1247 W 30th St, Los Angeles, CA 90007, USA",
+            "coordinates": {
+                "lat": 34.0277027,
+                "lng": -118.2904867
+            },
+            "description": "End of the itinerary"
+        }
+    ]
+}

@@ -1,0 +1,167 @@
+{
+    "itinerary": [
+        {
+            "type": "start",
+            "time": "2025-04-15 09:00",
+            "end_time": "2025-04-15 09:27",
+            "location": "Los Angeles, California, US",
+            "coordinates": {
+                "lat": 34.0549076,
+                "lng": -118.242643
+            },
+            "description": "Start the day in Los Angeles"
+        },
+        {
+            "type": "travel",
+            "time": "2025-04-15 09:27",
+            "end_time": "2025-04-15 09:54",
+            "location": "Universal Studios Hollywood",
+            "coordinates": {
+                "lat": 34.1370713,
+                "lng": -118.3533061
+            },
+            "description": "Travel from Los Angeles to Universal Studios Hollywood"
+        },
+        {
+            "type": "attraction",
+            "time": "2025-04-15 09:54",
+            "end_time": "2025-04-15 12:00",
+            "location": "Universal Studios Hollywood",
+            "coordinates": {
+                "lat": 34.1370713,
+                "lng": -118.3533061
+            },
+            "description": "Visit Universal Studios Hollywood",
+            "rating": 4.6,
+            "attraction_type": "tourist_attraction",
+            "vicinity": "100 Universal City Plaza, Universal City",
+            "image_reference": "AeeoHcI83UQ4dxhV7yN65gD8jjeTvWFgfpzOhb1A77wAG5dz_lMr5jBgM3WJjuXgtX2U0XSCfMSbWXNX6RzUqTp_CxZ4F0qntBEYtm4TXxzjDE0-nBM1cN8UwRMeLmLAOnN9PSlJ_k24uX48BOUa_xwMj1dUXVO7hyGvVxFiEfHF7FYU10jhv-IQ43C7IbKfPNheaoDLkKnWIwVZsMMc17sumKlGU8S818YR3vXBgChapq1Ue0u7AW5_zFmu8XKv32DSwKuDu9wLnSqnn9VmkZjTiOm4902nvdFvneLmaQKU6qZpNxB8l5mWHD_86viI0hSKG73wkknTPh6JPzv-_lrLQQMj655pzjf6Z5rJbyqn_c-5tjWJJfF8_6xzcey42qcw3WvjoMUE1Ho6ujT4a5INMbgDPma8n2UybGYuePBuk1ieN3QexHQk5GKI9bRA7e46O8xsph5xqYflrEi1U_gHUgnvIoKn0uf9O5-KXBfBx5_R1RK34sKwFoFQor6FuM27TgKHEfF-ywGtTDKowx0tcG1qb_xYKS1pZRrwz74p1YNaU5ZvPeOCwKL9nYcq1jVfLhP6j8jpottAmw"
+        },
+        {
+            "type": "travel",
+            "time": "2025-04-15 12:00",
+            "end_time": "2025-04-15 12:00",
+            "location": "Universal CityWalk Hollywood",
+            "coordinates": {
+                "lat": 34.1361697,
+                "lng": -118.3537322
+            },
+            "description": "Travel from Universal Studios Hollywood to Universal CityWalk Hollywood"
+        },
+        {
+            "type": "lunch",
+            "time": "2025-04-15 12:00",
+            "end_time": "2025-04-15 13:00",
+            "location": "Universal CityWalk Hollywood",
+            "coordinates": {
+                "lat": 34.1361697,
+                "lng": -118.3537322
+            },
+            "description": "Lunch at Universal CityWalk Hollywood",
+            "rating": 4.6,
+            "price_level": null,
+            "vicinity": "100 Universal City Plaza, Universal City",
+            "image_reference": "AeeoHcIR1mNZlWpAyc1ICMI_dW9Sl_aNC1LNZJkDBEERSPhT0pClsOJlv4Y_ujgeV1nHf5VJ4Qp2AunyVefNTfSiOAAslu97lCO-BS38t_fIaq7ipYOCjhGHbTsdnKr2PUoNS_B-fpQW2IMLIW6PkPRI_zFIrEfCMJXRjq_rvfb8kRoNj-9WzRVwc09adrMoZP7YZBoJH0XbL2KgP0KeazcZHY0WJlApoyJyEQHgdKiCL3gtib97cgmr_DBm36nIpv_OjeQKhJK-Zw6cSeKqGTaOVjwzZyauP3swuPOWOw81N06-_Ca_IhA-ExQ3IGOujn4xARtG2xY2bcciydBjNM-ApEJGWTTxGWLSqJLpj9vAar8lQFICw08LC0N865ZbJajHala-nCLNdE6ROrrzHrivyXalc0aYFZj5od3xg-zcGKXf8IsIdtCPBVz_w2t-8gyz33jVgL9-GVRRDxrm7GxGDhX1wZFN6tvGGkK3vQv299lbmlJS97hmR31axhkoWPBK5EIqzbZtIMaPz7US3m3OthOHVlTYnJRsJsSjiLsHPq2MyQ-YVijSZY2j2aVWuZodO_2kGRiJ"
+        },
+        {
+            "type": "travel",
+            "time": "2025-04-15 13:00",
+            "end_time": "2025-04-15 13:08",
+            "location": "Hollywood Walk of Fame",
+            "coordinates": {
+                "lat": 34.1016009,
+                "lng": -118.3295568
+            },
+            "description": "Travel from Universal CityWalk Hollywood to Hollywood Walk of Fame"
+        },
+        {
+            "type": "attraction",
+            "time": "2025-04-15 13:08",
+            "end_time": "2025-04-15 15:08",
+            "location": "Hollywood Walk of Fame",
+            "coordinates": {
+                "lat": 34.1016009,
+                "lng": -118.3295568
+            },
+            "description": "Visit Hollywood Walk of Fame",
+            "rating": 4.1,
+            "attraction_type": "tourist_attraction",
+            "vicinity": "Hollywood Blvd, Los Angeles",
+            "image_reference": "AeeoHcK8D3czAhJB4AByRv2XmB1Rfc8Q8hs4tvOpP8vWDE8P4kSbWTO03lkU3nPMXPzGOM77tB53cOAdlceauNT2EkOcZfxKhFCOu6tbM4KbGjs1SClS5h6oSWMLxJUyPHpLKI48z8vIn6KecV9AL4E3ddFhQ38XtQAkv3peakeof8wD2HaN0ACsWHIt0eA7gkhIEz4UAUYFUL6c6x7NAoakTscQdYeNhrZpNPlGZY3NsvnrpQih_NuFshBC2W9ywunlV4gqbUoY0rPIBY2RlT-r9dwy0mQpED8oa7i-1YII83mqMNV4MwI"
+        },
+        {
+            "type": "travel",
+            "time": "2025-04-15 15:08",
+            "end_time": "2025-04-15 15:10",
+            "location": "Madame Tussauds Hollywood",
+            "coordinates": {
+                "lat": 34.1017225,
+                "lng": -118.3415065
+            },
+            "description": "Travel from Hollywood Walk of Fame to Madame Tussauds Hollywood"
+        },
+        {
+            "type": "attraction",
+            "time": "2025-04-15 15:10",
+            "end_time": "2025-04-15 17:10",
+            "location": "Madame Tussauds Hollywood",
+            "coordinates": {
+                "lat": 34.1017225,
+                "lng": -118.3415065
+            },
+            "description": "Visit Madame Tussauds Hollywood",
+            "rating": 4.5,
+            "attraction_type": "museum",
+            "vicinity": "6933 Hollywood Blvd, Los Angeles",
+            "image_reference": "AeeoHcKifLyQtEkoJRj5W8QKHK1N5mfqkdoX9I7vV_Cqz9gKpMjcdFShSrFDYL88fbjqVF9PTd7mgs5wE4Vh5IZ9A1Rf0POlr-n0aP5soXUccEFxMMwudPCOTn5rKvDJcfWSxI9gCm80Uop-LUdJz4OPIea-NO1bHy5z-879Pfyx28y_npkttsvHrT4BpyvxPc-ZcinrWYSAnPMUyINshgTlR1g1vG5UnsKioYnPpgBcV6erEe6J41dcaSG7-8w3jmwIOR49_7gILR9etwEXaz0oZwb02fshW_RE0Q0o92fYiql22PqKKa8"
+        },
+        {
+            "type": "travel",
+            "time": "2025-04-15 17:10",
+            "end_time": "2025-04-15 17:32",
+            "location": "Hearts & Flame",
+            "coordinates": {
+                "lat": 34.0464265,
+                "lng": -118.2353365
+            },
+            "description": "Travel from Madame Tussauds Hollywood to Hearts & Flame"
+        },
+        {
+            "type": "dinner",
+            "time": "2025-04-15 17:32",
+            "end_time": "2025-04-15 19:02",
+            "location": "Hearts & Flame",
+            "coordinates": {
+                "lat": 34.0464265,
+                "lng": -118.2353365
+            },
+            "description": "Dinner at Hearts & Flame",
+            "rating": 4.3,
+            "price_level": 4,
+            "vicinity": "225 S Garey St, Los Angeles",
+            "image_reference": "AeeoHcJ81cWiphpyer2xIP91kcpYhThbjvbosoCxcNOls9gwp-g2JX4CgaU11f4grcis63uuGsKhnjLc54jvHJP-QSa28fWAZO7EfRPNZM-Y4NXFgrne1VNcT7E470Ztoh-paNjZ9t5Ms1d3r9iN1M-yBs3YkhhIBy5lrxyFLtpU4WwvxK6NQaTniDJGKGXxbbG8bCArOCE_jjZZmyz1dKet7cuiN7sSChRRXlKfQ1UyGsysOmwgPGYPnBNP2PP3IdNNl6aQvIWAkx5eB9fAYMOx4MlJtcl7KyS1h5hicwt9O9dtQOcOZ0M"
+        },
+        {
+            "type": "travel",
+            "time": "2025-04-15 19:02",
+            "end_time": "2025-04-15 19:12",
+            "location": "City Park Apartments, 1247 W 30th St, Los Angeles, CA 90007, USA",
+            "coordinates": {
+                "lat": 34.0277027,
+                "lng": -118.2904867
+            },
+            "description": "Travel from Hearts & Flame to City Park Apartments"
+        },
+        {
+            "type": "end",
+            "time": "2025-04-15 19:12",
+            "end_time": "2025-04-15 21:00",
+            "location": "City Park Apartments, 1247 W 30th St, Los Angeles, CA 90007, USA",
+            "coordinates": {
+                "lat": 34.0277027,
+                "lng": -118.2904867
+            },
+            "description": "End the day at City Park Apartments"
+        }
+    ]
+}

@@ -5,10 +5,18 @@ import json
 import sys
 import logging
 import os
+
+import multiprocessing
+import time
 sys.path.append(os.path.abspath("..")) 
 logging.basicConfig(level=logging.DEBUG)
 
 from models import TravelRequest, TravelPlan, ItineraryResponse
+
+# from MapAgent.mapagent import MapAgent
+# from InfoAgent.info_agent import agent as info_agent  # assuming the agent is named 'agent' in info_agent.py
+# import asyncio
+# import threading
 
 from dotenv import load_dotenv
 # Load environment variables from .env file
@@ -28,6 +36,32 @@ client_agent = Agent(
 
 client_protocol = Protocol()
 received_response = False
+
+# def run_agent_in_thread(agent, name):
+#     """Run an agent in a separate thread"""
+#     print(f"Starting {name}...")
+#     agent.run()
+
+# def start_all_agents():
+#     """Start all agents in separate threads"""
+#     # Create and start Map Agent
+#     map_agent = MapAgent()
+#     map_thread = threading.Thread(
+#         target=run_agent_in_thread,
+#         args=(map_agent.agent, "Map Agent"),
+#         daemon=True
+#     )
+#     map_thread.start()
+
+#     # Start Info Agent
+#     info_thread = threading.Thread(
+#         target=run_agent_in_thread,
+#         args=(info_agent, "Info Agent"),
+#         daemon=True
+#     )
+#     info_thread.start()
+
+#     return map_thread, info_thread
 
 # Handle intermediate travel plan from Information Agent
 @client_protocol.on_message(model=TravelPlan)
@@ -149,3 +183,87 @@ if __name__ == "__main__":
     print(f"Client agent address: {client_agent.address}")
     print(f"Reading travel request from: {INPUT_FILE_PATH}")
     client_agent.run()
+
+
+# if __name__ == "__main__":
+#     # Start other agents
+#     map_thread, info_thread = start_all_agents()
+#     import time
+#     # Give other agents time to start up
+#     print("Waiting for agents to start...")
+#     time.sleep(2)
+    
+#     print(f"Client agent address: {client_agent.address}")
+#     print(f"Reading travel request from: {INPUT_FILE_PATH}")
+    
+#     try:
+#         client_agent.run()
+#     except KeyboardInterrupt:
+#         print("\nShutting down agents...")
+#         sys.exit(0)
+
+
+# def run_map_agent():
+#     """Run map agent in a separate process"""
+#     map_agent = MapAgent()
+#     map_agent.run()
+
+# def run_info_agent():
+#     """Run info agent in a separate process"""
+#     info_agent.run()
+
+# def start_all_agents():
+#     """Start all agents in separate processes"""
+#     # Create processes for each agent
+#     map_process = multiprocessing.Process(
+#         target=run_map_agent,
+#         name="MapAgent"
+#     )
+    
+#     info_process = multiprocessing.Process(
+#         target=run_info_agent,
+#         name="InfoAgent"
+#     )
+    
+#     # Start the processes
+#     map_process.start()
+#     info_process.start()
+    
+#     return map_process, info_process
+
+# if __name__ == "__main__":
+#     # Set up logging
+#     logging.basicConfig(level=logging.INFO)
+#     logger = logging.getLogger(__name__)
+
+#     try:
+#         # Start other agents
+#         map_process, info_process = start_all_agents()
+        
+#         # Give other agents time to start up
+#         logger.info("Waiting for agents to start...")
+#         time.sleep(2)
+        
+#         logger.info(f"Client agent address: {client_agent.address}")
+#         logger.info(f"Reading travel request from: {INPUT_FILE_PATH}")
+        
+#         # Run the client agent
+#         client_agent.run()
+        
+#     except KeyboardInterrupt:
+#         logger.info("\nShutting down agents...")
+#         # Terminate the processes
+#         map_process.terminate()
+#         info_process.terminate()
+#         # Wait for processes to finish
+#         map_process.join()
+#         info_process.join()
+#         sys.exit(0)
+#     except Exception as e:
+#         logger.error(f"Error during execution: {e}")
+#         # Ensure processes are terminated in case of error
+#         map_process.terminate()
+#         info_process.terminate()
+#         map_process.join()
+#         info_process.join()
+#         sys.exit(1)

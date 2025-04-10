@@ -1,0 +1,14 @@
+{
+    "itinerary": [
+        {
+            "type": "error",
+            "time": "2025-04-09 22:13",
+            "location": "Error",
+            "coordinates": {
+                "lat": 0,
+                "lng": 0
+            },
+            "description": "Failed to generate itinerary: "
+        }
+    ]
+}
